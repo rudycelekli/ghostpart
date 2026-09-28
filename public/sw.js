@@ -1,4 +1,4 @@
-const CACHE = "ghostpart-v0.3.2-shell";
+const CACHE = "ghostpart-v0.4-shell";
 const base = new URL(self.registration.scope);
 const buildAssets = /* BUILD_ASSETS */ [];
 const shell = [

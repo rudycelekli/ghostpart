@@ -243,7 +243,7 @@ export function FitWorkbench({
     <section className="fit-section" id="fit-loop">
       <div className="section-heading">
         <div>
-          <div className="eyebrow">02 / FIT LOOP</div>
+          <div className="eyebrow">03 / FIT LOOP</div>
           <h2>Print. Scan. Correct.</h2>
         </div>
         <p>

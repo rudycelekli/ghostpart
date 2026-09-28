@@ -13,10 +13,10 @@ The circles have a 5 mm nominal centerline diameter and a crosshair at each cent
 
 ## Five-photo check
 
-1. Take five **new** photos of the card: one near square-on, two with modest left/right tilt, and two with modest up/down tilt. Keep the whole card in focus. Do not reuse a photo or crop away the marker.
-2. For each photo, select **Add a photo**, run **Find marker**, and confirm the four proposed corners trace the black square. If it fails, note the failure and mark the corners manually. Zoom to 3×–4× **before** tapping H1, H2, and H3 in that order, panning the image as needed. Zooming after the taps does not improve those points; re-mark them if needed.
-3. Enter the _physical_ marker side and both measured spans in Measurement review. Record the app's H1→H2 and H1→H3 photo spans and its status. A blocked result is a result; do not alter the physical readings to make it pass.
-4. Use the same lighting that you will use for the repair. Use the rear camera at its normal zoom; avoid ultra-wide, digital zoom, portrait mode, and strong shadows for this check.
+1. In the app's **Accuracy check**, enter the three readings from the _physical print_, tick the measurement checkbox, and select **Lock readings and begin**. The app carries those values into every new photo. Do not change them to make a photo pass.
+2. Take five **new** photos of the card in the prompted order: square-on, modest left tilt, right tilt, up tilt, down tilt. Keep the whole card in focus. Do not reuse a photo or crop away the marker. Use the same lighting and rear camera you plan to use for the repair; avoid ultra-wide, digital zoom, portrait mode, and strong shadows.
+3. For each photo, select **Add a photo**, run **Find marker**, and confirm the four proposed corners trace the black square. If it fails, mark the corners manually. Zoom to 3×–4× **before** tapping H1, H2, and H3 in that order, panning the image as needed. Zooming after the taps does not improve those points; re-mark them if needed.
+4. Select **Record scan** under Accuracy check. Record incomplete or blocked captures too; they are useful evidence. The app prevents the same photo from filling two views. After all five, read the gate result and download **Report JSON** or **Scan table CSV**. The session survives a reload on the same device, but no photo is saved in it. Export the report before selecting **New session**, which clears the saved scans.
 
 | Photo | View       | Auto marker? | H1→H2 photo (mm) | H1→H3 photo (mm) | Status / notes |
 | ----- | ---------- | ------------ | ---------------: | ---------------: | -------------- |
@@ -26,7 +26,7 @@ The circles have a 5 mm nominal centerline diameter and a crosshair at each cent
 | 4     | up tilt    |              |                  |                  |                |
 | 5     | down tilt  |              |                  |                  |                |
 
-**Preflight gate:** all five captures should be cross-checked, each reported span should be within **0.5 mm** of your corresponding physical reading, and the maximum minus minimum photo span across captures should be at most **0.5 mm** for each pair. This is a conservative decision rule for moving to a _noncritical_ repair trial, not a confidence interval or a claim of product accuracy. If it fails, improve lighting, flatten the card, move the marker closer in the frame, use more pixels, and repeat. Record repeated failures rather than hiding them.
+**Preflight gate:** all five captures should be cross-checked, each reported span should be within **0.5 mm** of your corresponding physical reading, and the maximum minus minimum photo span across captures should be at most **0.5 mm** for each pair. The app calculates this automatically. The table above is an optional paper backup. This is a conservative decision rule for moving to a _noncritical_ repair trial, not a confidence interval or a claim of product accuracy. If it fails, improve lighting, flatten the card, move the marker closer in the frame, use more pixels, and repeat. Record repeated failures rather than hiding them.
 
 ## Fit-loop dry run
 

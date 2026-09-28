@@ -2,7 +2,7 @@
 
 **Make what is missing.** GhostPart is an open-source, local-first repair workbench. Its first release measures flat mounting points from a phone photo and generates a printable, editable replacement plate.
 
-> **Status: experimental v0.3.** This is a working planar repair tool with an early fit revision loop, not automatic reconstruction for arbitrary broken objects. Real-world fit and strength are unverified.
+> **Status: experimental v0.4.** This is a working planar repair tool with a guided accuracy check and an early fit revision loop. Real-world fit and strength are unverified.
 
 ## Try it
 
@@ -15,7 +15,7 @@ npm run dev
 
 Open the [hosted HTTPS app](https://rudycelekli.github.io/ghostpart/) on a phone, or use the local URL printed by Vite. The sample project is loaded by default. Rotate the 3D part, change fit controls, and download an STL or editable OpenSCAD file. No account, cloud API, model key, or photo upload service is involved.
 
-Before measuring a real object, print the [accuracy check card](public/accuracy-check-40mm.svg) and follow the [five-photo pretest](PRETEST.md). It tests the phone capture and calibration workflow against physical ruler or caliper readings.
+Before measuring a real object, print the [accuracy check card](public/accuracy-check-40mm.svg) and run the app's **Accuracy check** with five new photos. The [pretest guide](PRETEST.md) explains the physical readings and pass rule. The app locks the measured values across captures, checks each view against them, saves the session on this device, and exports a photo-free JSON report or CSV scan table.
 
 ## Repair something
 
@@ -43,6 +43,7 @@ Before measuring a real object, print the [accuracy check card](public/accuracy-
 - Optional microphone tap comparison before and after a repair. It reports the strongest frequency of the loudest captured moment; it is **not** a strength or safety assessment.
 - A working sample project and a printable calibration marker.
 - A printable accuracy check card and repeatability protocol for a pre-repair bench check.
+- A guided five-view accuracy check that locks physical readings, prevents photo reuse, records failures, and applies a conservative repeatability gate before a repair trial.
 
 ### Boundaries
 
@@ -52,7 +53,7 @@ The marker and measured holes must be coplanar. Lens distortion, a bent marker, 
 
 Install [Ollama](https://ollama.com/) separately and start a model on the same device. Click **Connect Ollama on this device**, choose a model, describe the repair, and click **Analyze this repair** after measurements are cross-checked. The app uses Ollama's [chat API](https://docs.ollama.com/api/chat) with structured JSON output. A [vision-capable model](https://docs.ollama.com/capabilities/vision) can also receive the photo when you explicitly select that option. The app connects only to `127.0.0.1:11434`; it has no cloud fallback. AI output is unverified advice, never measurement authority.
 
-Phone depth APIs vary by device and browser. Native depth and 3D reconstruction are research tracks, not v0.3 features.
+Phone depth APIs vary by device and browser. Native depth and 3D reconstruction are research tracks, not v0.4 features.
 
 ## Why this exists
 
@@ -68,7 +69,7 @@ npm run build
 npm audit
 ```
 
-The code is TypeScript, React, Three.js, and Vite. `src/lib/measure.ts` contains the planar homography and dimensions. `src/lib/quality.ts` handles measurement review and sensitivity checks. `src/lib/fit.ts` computes the measured second revision. `src/lib/cad.ts` builds the 3D mesh and editable source. `src/lib/localAi.ts` isolates the optional Ollama connection. The app has no server component. GitHub Pages deployment is defined in [pages.yml](.github/workflows/pages.yml).
+The code is TypeScript, React, Three.js, and Vite. `src/lib/measure.ts` contains the planar homography and dimensions. `src/lib/quality.ts` handles measurement review and sensitivity checks. `src/lib/preflight.ts` evaluates the five-view accuracy check. `src/lib/fit.ts` computes the measured second revision. `src/lib/cad.ts` builds the 3D mesh and editable source. `src/lib/localAi.ts` isolates the optional Ollama connection. The app has no server component. GitHub Pages deployment is defined in [pages.yml](.github/workflows/pages.yml).
 
 ## Contribute
 

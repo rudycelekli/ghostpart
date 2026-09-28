@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PartPreview } from "./components/PartPreview";
 import { FitWorkbench } from "./components/FitWorkbench";
+import { PreflightLab } from "./components/PreflightLab";
 import {
   downloadFile,
   fitCouponDiameters,
@@ -36,6 +37,11 @@ import {
 } from "./lib/measure";
 import { assessMeasurement } from "./lib/quality";
 import { detectGhostMarker } from "./lib/marker";
+import {
+  PREFLIGHT_STORAGE_KEY,
+  readPreflightSession,
+  type PreflightSession,
+} from "./lib/preflight";
 import {
   imageToLocalJpeg,
   listLocalModels,
@@ -106,6 +112,17 @@ export default function App() {
   const [sensorError, setSensorError] = useState("");
   const [captureError, setCaptureError] = useState("");
   const [findingMarker, setFindingMarker] = useState(false);
+  const [autoMarkerFound, setAutoMarkerFound] = useState(false);
+  const [captureId, setCaptureId] = useState("");
+  const [preflightSession, setPreflightSession] =
+    useState<PreflightSession | null>(() => {
+      try {
+        return readPreflightSession(window.localStorage);
+      } catch {
+        return null;
+      }
+    });
+  const [preflightStorageError, setPreflightStorageError] = useState("");
   const [tapBefore, setTapBefore] = useState<TapSignature | null>(null);
   const [tapAfter, setTapAfter] = useState<TapSignature | null>(null);
   const [tapBusy, setTapBusy] = useState<"before" | "after" | null>(null);
@@ -133,6 +150,22 @@ export default function App() {
     },
     [],
   );
+
+  useEffect(() => {
+    try {
+      if (preflightSession)
+        window.localStorage.setItem(
+          PREFLIGHT_STORAGE_KEY,
+          JSON.stringify(preflightSession),
+        );
+      else window.localStorage.removeItem(PREFLIGHT_STORAGE_KEY);
+      setPreflightStorageError("");
+    } catch {
+      setPreflightStorageError(
+        "Device storage is unavailable. Export the report before closing this page.",
+      );
+    }
+  }, [preflightSession]);
 
   const calibration = useMemo(() => {
     if (corners.length !== 4) return null;
@@ -198,6 +231,28 @@ export default function App() {
   }, [options.holeDiameter]);
 
   const exportReady = !!result.plate && quality?.status === "cross-checked";
+  const preflightReference =
+    preflightSession && preflightSession.attempts.length < 5
+      ? preflightSession.reference
+      : null;
+  const lockedPreflightSpans = preflightReference
+    ? [
+        String(preflightReference.horizontalSpanMm),
+        String(preflightReference.verticalSpanMm),
+      ]
+    : [];
+
+  const changePreflightSession = (next: PreflightSession | null) => {
+    if (!preflightSession && next && !isSample) {
+      setMarkerMeasuredMm(String(next.reference.markerSideMm));
+      setMarkerScaleChecked(true);
+      setSpanChecksMm([
+        String(next.reference.horizontalSpanMm),
+        String(next.reference.verticalSpanMm),
+      ]);
+    }
+    setPreflightSession(next);
+  };
 
   useEffect(() => {
     aiRequestId.current += 1;
@@ -207,15 +262,23 @@ export default function App() {
   const loadImage = (url: string, sample = false) => {
     setImage(url);
     setIsSample(sample);
+    setCaptureId(sample ? "" : crypto.randomUUID());
+    setAutoMarkerFound(false);
     setCorners(sample ? sampleCorners : []);
     setHoles(sample ? sampleHoles : []);
     setMode(sample ? "preview" : "marker");
     setZoom(1);
     setCornerClickRadiusPx(sample ? 0.1 : 0);
     setHoleClickRadiusPx(sample ? 0.1 : 0);
-    setMarkerMeasuredMm(sample ? "40" : "");
-    setMarkerScaleChecked(sample);
-    setSpanChecksMm(sample ? ["60"] : []);
+    setMarkerMeasuredMm(
+      sample
+        ? "40"
+        : preflightReference
+          ? String(preflightReference.markerSideMm)
+          : "",
+    );
+    setMarkerScaleChecked(sample || !!preflightReference);
+    setSpanChecksMm(sample ? ["60"] : lockedPreflightSpans);
     setRepairGoal(
       sample
         ? "Replace a broken support tab between these mounting holes."
@@ -237,6 +300,7 @@ export default function App() {
   const findMarker = async () => {
     setCaptureError("");
     setFindingMarker(true);
+    setAutoMarkerFound(false);
     try {
       const found = await detectGhostMarker(image);
       if (!found) {
@@ -247,7 +311,8 @@ export default function App() {
       }
       setCorners(found);
       setHoles([]);
-      setSpanChecksMm([]);
+      setSpanChecksMm(lockedPreflightSpans);
+      setAutoMarkerFound(true);
       setCornerClickRadiusPx(0.75);
       setHoleClickRadiusPx(0);
       setMode("holes");
@@ -458,7 +523,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.3
+          <span /> OPEN SOURCE / V0.4
         </span>
       </header>
 
@@ -710,7 +775,8 @@ export default function App() {
                   onClick={() => {
                     setCorners([]);
                     setHoles([]);
-                    setSpanChecksMm([]);
+                    setSpanChecksMm(lockedPreflightSpans);
+                    setAutoMarkerFound(false);
                     setCornerClickRadiusPx(0);
                     setHoleClickRadiusPx(0);
                     setMode("marker");
@@ -723,7 +789,7 @@ export default function App() {
                   disabled={corners.length !== 4}
                   onClick={() => {
                     setHoles([]);
-                    setSpanChecksMm([]);
+                    setSpanChecksMm(lockedPreflightSpans);
                     setHoleClickRadiusPx(0);
                     setMode("holes");
                   }}
@@ -778,6 +844,7 @@ export default function App() {
                         type="number"
                         min="1"
                         step="0.1"
+                        disabled={!!preflightReference}
                         value={markerMeasuredMm}
                         onChange={(event) => {
                           setMarkerMeasuredMm(event.target.value);
@@ -791,6 +858,7 @@ export default function App() {
                   <label className="review-checkbox">
                     <input
                       type="checkbox"
+                      disabled={!!preflightReference}
                       checked={markerScaleChecked}
                       onChange={(event) =>
                         setMarkerScaleChecked(event.target.checked)
@@ -806,6 +874,7 @@ export default function App() {
                           type="number"
                           min="0.1"
                           step="0.1"
+                          disabled={!!preflightReference}
                           value={spanChecksMm[index] ?? ""}
                           onChange={(event) =>
                             setSpanChecksMm((previous) => {
@@ -1032,6 +1101,26 @@ export default function App() {
           </div>
         </section>
 
+        <PreflightLab
+          session={preflightSession}
+          onSessionChange={changePreflightSession}
+          quality={quality}
+          isSample={isSample}
+          captureId={captureId}
+          holeCount={holes.length}
+          markerSideMm={Number(markerMeasuredMm) || null}
+          markerMethod={
+            autoMarkerFound
+              ? "automatic"
+              : corners.length === 4
+                ? "manual"
+                : "not-found"
+          }
+          imageSizePx={isSample ? null : naturalSize}
+          captureError={captureError}
+          storageError={preflightStorageError}
+        />
+
         <FitWorkbench
           key={image}
           basePlate={exportReady ? result.plate : null}
@@ -1045,7 +1134,7 @@ export default function App() {
         <section className="ai-section" id="intelligence">
           <div className="section-heading">
             <div>
-              <div className="eyebrow">03 / REPAIR INTELLIGENCE</div>
+              <div className="eyebrow">04 / REPAIR INTELLIGENCE</div>
               <h2>Reason from evidence.</h2>
             </div>
             <p>
@@ -1191,7 +1280,7 @@ export default function App() {
         <section className="sensor-section" id="how">
           <div className="section-heading sensor-heading">
             <div>
-              <div className="eyebrow">04 / YOUR PHONE IS A WORKSHOP</div>
+              <div className="eyebrow">05 / YOUR PHONE IS A WORKSHOP</div>
               <h2>Use the sensors you already own.</h2>
             </div>
             <p>
@@ -1313,7 +1402,7 @@ export default function App() {
                 varies, so depth is on the roadmap rather than claimed as part
                 of this release.
               </p>
-              <span className="future-label">RESEARCH TRACK / NOT IN V0.3</span>
+              <span className="future-label">RESEARCH TRACK / NOT IN V0.4</span>
             </div>
           </div>
         </section>
