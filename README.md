@@ -4,6 +4,8 @@
 
 > **Status: experimental v0.4.** This is a working planar repair tool with a guided accuracy check and an early fit revision loop. Real-world fit and strength are unverified.
 
+**[Try GhostPart in your browser →](https://rudycelekli.github.io/ghostpart/)** Public HTTPS app. Works on phones; no account or install required.
+
 ## Try it
 
 Requires Node.js 20.19+ or 22.12+.
