@@ -2,7 +2,7 @@
 
 **Make what is missing.** GhostPart is an open-source, local-first repair workbench. Its first release measures flat mounting points from a phone photo and generates a printable, editable replacement plate.
 
-> **Status: experimental v0.4.** This is a working planar repair tool with a guided accuracy check and an early fit revision loop. Real-world fit and strength are unverified.
+> **Status: experimental v0.4.1.** This is a working planar repair tool with a guided accuracy check and an early fit revision loop. Real-world fit and strength are unverified.
 
 **[Try GhostPart in your browser →](https://rudycelekli.github.io/ghostpart/)** Public HTTPS app. Works on phones; no account or install required.
 
@@ -24,6 +24,7 @@ Before measuring a real object, print the [accuracy check card](public/accuracy-
 1. Download and print the [automatic calibration marker](public/marker-auto-40mm.svg) at **100% scale**, without “fit to page.” Its **black square**, rather than the whole white card, must measure 40 mm. Check it with a ruler. The [older manual marker](public/marker-40mm.svg) remains available.
 2. Put the marker on the **same flat plane** as the mounting holes. Take a sharp photo as square-on as practical. The camera, motion, and orientation controls work best in a secure browser context (HTTPS or localhost).
 3. Add the photo and click **Find marker** to propose the four black-square corners. Check the overlay. If detection fails, click the black square's corners manually, clockwise from the top left. [js-aruco2](https://github.com/damianofalcioni/js-aruco2) performs detection locally and is MIT licensed.
+   If you choose **Live camera**, wait until a moving picture appears and **Capture frame** becomes available. If permission is blocked or the camera is busy, the app shows a specific message; allow this site to use the camera or use **Add a photo** instead.
 4. Click the center of at least two mounting holes, then choose **Build this part**.
 5. Enter the marker side length **as measured on the print** and check the box. Measure each hole center spacing independently with calipers or a ruler and enter it in Measurement review. Zoom in and re-mark points if the app reports unstable placement. A later zoom does not improve points already marked.
 6. Set edge margin, thickness, hole diameter, and corner radius. Print the optional clearance coupon (three holes at target diameter ±0.2 mm) and test it with the actual screw. Then select the working hole diameter for the full plate.

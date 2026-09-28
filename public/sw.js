@@ -1,4 +1,4 @@
-const CACHE = "ghostpart-v0.4-shell";
+const CACHE = "ghostpart-v0.4.1-shell";
 const base = new URL(self.registration.scope);
 const buildAssets = /* BUILD_ASSETS */ [];
 const shell = [
@@ -23,7 +23,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     Promise.all([
       caches.keys().then((names) =>
-        Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name))),
+        Promise.all(
+          names
+            .filter((name) => name.startsWith("ghostpart-") && name !== CACHE)
+            .map((name) => caches.delete(name)),
+        ),
       ),
       self.clients.claim(),
     ]),

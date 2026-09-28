@@ -104,6 +104,8 @@ export default function App() {
   const [markerScaleChecked, setMarkerScaleChecked] = useState(true);
   const [spanChecksMm, setSpanChecksMm] = useState<string[]>(["60"]);
   const [cameraOn, setCameraOn] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const [sensorState, setSensorState] = useState({
     active: false,
     motion: null as number | null,
@@ -141,15 +143,86 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraStream = useRef<MediaStream | null>(null);
+  const cameraRequestId = useRef(0);
   const blobUrl = useRef<string | null>(null);
 
   useEffect(
     () => () => {
+      cameraRequestId.current += 1;
       cameraStream.current?.getTracks().forEach((track) => track.stop());
       if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
     },
     [],
   );
+
+  useEffect(() => {
+    if (!cameraOn) return;
+    const video = videoRef.current;
+    const stream = cameraStream.current;
+    if (!video || !stream) return;
+
+    let hasFrame = false;
+    let closed = false;
+    const fail = (message: string) => {
+      if (closed) return;
+      closed = true;
+      cameraRequestId.current += 1;
+      stream.getTracks().forEach((track) => track.stop());
+      if (cameraStream.current === stream) cameraStream.current = null;
+      setCameraOn(false);
+      setCameraReady(false);
+      setCaptureError(message);
+    };
+    const markReady = () => {
+      if (closed) return;
+      if (
+        video.videoWidth > 0 &&
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+      ) {
+        hasFrame = true;
+        setCameraReady(true);
+        setCaptureError("");
+      }
+    };
+    const onVideoError = () =>
+      fail(
+        "The camera opened but could not show video. Try Add a photo instead.",
+      );
+    const onTrackEnded = () =>
+      fail(
+        "The camera disconnected. Reconnect it and retry, or use Add a photo.",
+      );
+    const track = stream.getVideoTracks()[0];
+    video.addEventListener("loadeddata", markReady);
+    video.addEventListener("playing", markReady);
+    video.addEventListener("error", onVideoError);
+    track?.addEventListener("ended", onTrackEnded);
+    video.srcObject = stream;
+    void video
+      .play()
+      .then(markReady)
+      .catch(() => {
+        fail(
+          "The browser blocked live video playback. Check camera permission or use Add a photo.",
+        );
+      });
+    const timeout = window.setTimeout(() => {
+      if (!hasFrame)
+        fail(
+          "The camera opened but no video frame arrived. Check camera permission or use Add a photo.",
+        );
+    }, 10000);
+    return () => {
+      closed = true;
+      window.clearTimeout(timeout);
+      video.removeEventListener("loadeddata", markReady);
+      video.removeEventListener("playing", markReady);
+      video.removeEventListener("error", onVideoError);
+      track?.removeEventListener("ended", onTrackEnded);
+      video.pause();
+      video.srcObject = null;
+    };
+  }, [cameraOn]);
 
   useEffect(() => {
     try {
@@ -242,6 +315,15 @@ export default function App() {
       ]
     : [];
 
+  const stopCamera = () => {
+    cameraRequestId.current += 1;
+    cameraStream.current?.getTracks().forEach((track) => track.stop());
+    cameraStream.current = null;
+    setCameraOn(false);
+    setCameraReady(false);
+    setCameraStarting(false);
+  };
+
   const changePreflightSession = (next: PreflightSession | null) => {
     if (!preflightSession && next && !isSample) {
       setMarkerMeasuredMm(String(next.reference.markerSideMm));
@@ -260,6 +342,7 @@ export default function App() {
   }, [result.plate, quality, repairGoal, image]);
 
   const loadImage = (url: string, sample = false) => {
+    stopCamera();
     setImage(url);
     setIsSample(sample);
     setCaptureId(sample ? "" : crypto.randomUUID());
@@ -329,27 +412,71 @@ export default function App() {
 
   const startCamera = async () => {
     setCaptureError("");
+    setCameraReady(false);
+    setCameraStarting(true);
+    const requestId = ++cameraRequestId.current;
+    let timeout: number | undefined;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
+      const pending = navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
+      void pending
+        .then((stream) => {
+          if (requestId !== cameraRequestId.current)
+            stream.getTracks().forEach((track) => track.stop());
+        })
+        .catch(() => {});
+      const stream = await Promise.race([
+        pending,
+        new Promise<never>((_, reject) => {
+          timeout = window.setTimeout(
+            () =>
+              reject(
+                new DOMException("Camera request timed out", "TimeoutError"),
+              ),
+            12000,
+          );
+        }),
+      ]);
+      if (requestId !== cameraRequestId.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       cameraStream.current = stream;
       setCameraOn(true);
-      window.setTimeout(() => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      }, 0);
-    } catch {
+      setCameraStarting(false);
+    } catch (error) {
+      if (requestId !== cameraRequestId.current) return;
+      cameraRequestId.current += 1;
+      setCameraStarting(false);
       setCaptureError(
-        "Camera access is unavailable. You can still upload a photo.",
+        error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Camera permission is blocked. Allow camera for this site in your browser, then retry, or use Add a photo."
+          : error instanceof DOMException && error.name === "TimeoutError"
+            ? "Camera permission is still pending. Check the browser's camera prompt, then retry, or use Add a photo."
+            : error instanceof DOMException && error.name === "NotFoundError"
+              ? "No camera was found. Connect a camera or use Add a photo."
+              : error instanceof DOMException &&
+                  error.name === "NotReadableError"
+                ? "The camera is busy. Close other camera apps or tabs, then retry, or use Add a photo."
+                : "Live camera is unavailable in this browser. Try Add a photo instead.",
       );
+    } finally {
+      if (timeout !== undefined) window.clearTimeout(timeout);
     }
   };
 
   const captureFrame = () => {
     const video = videoRef.current;
-    if (!video || !video.videoWidth) {
-      setCaptureError("Camera is still starting. Try again in a moment.");
+    if (
+      !cameraReady ||
+      !video ||
+      video.videoWidth === 0 ||
+      video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      setCaptureError("Wait for the live picture before capturing a frame.");
       return;
     }
     const canvas = document.createElement("canvas");
@@ -357,9 +484,6 @@ export default function App() {
     canvas.height = video.videoHeight;
     canvas.getContext("2d")?.drawImage(video, 0, 0);
     loadImage(canvas.toDataURL("image/jpeg", 0.94));
-    cameraStream.current?.getTracks().forEach((track) => track.stop());
-    cameraStream.current = null;
-    setCameraOn(false);
   };
 
   const enableSensors = async () => {
@@ -523,7 +647,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.4
+          <span /> OPEN SOURCE / V0.4.1
         </span>
       </header>
 
@@ -621,14 +745,26 @@ export default function App() {
                 <button
                   className="toolbar-button"
                   onClick={cameraOn ? captureFrame : startCamera}
+                  disabled={cameraStarting || (cameraOn && !cameraReady)}
                 >
                   {cameraOn ? <ScanLine size={17} /> : <Camera size={17} />}
-                  {cameraOn ? "Capture frame" : "Live camera"}
+                  {cameraStarting
+                    ? "Opening camera…"
+                    : cameraOn
+                      ? cameraReady
+                        ? "Capture frame"
+                        : "Waiting for video…"
+                      : "Live camera"}
                 </button>
+                {(cameraOn || cameraStarting) && (
+                  <button className="toolbar-button" onClick={stopCamera}>
+                    Stop camera
+                  </button>
+                )}
                 <button
                   className="toolbar-button"
                   onClick={findMarker}
-                  disabled={cameraOn || findingMarker}
+                  disabled={cameraOn || cameraStarting || findingMarker}
                 >
                   <ScanSearch size={17} />
                   {findingMarker ? "Finding…" : "Find marker"}
@@ -666,7 +802,14 @@ export default function App() {
                 className={`photo-stage ${mode !== "preview" ? "is-marking" : ""}`}
               >
                 {cameraOn ? (
-                  <video ref={videoRef} autoPlay playsInline muted />
+                  <>
+                    <video ref={videoRef} autoPlay playsInline muted />
+                    {!cameraReady && (
+                      <span className="camera-wait">
+                        Connecting to live video…
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <div
                     className="photo-image"

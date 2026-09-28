@@ -738,6 +738,20 @@ footer a:hover {
   aspect-ratio: 4/3;
   object-fit: cover;
 }
+.camera-wait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(38, 51, 44, 0.82);
+  color: #f1f3e9;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
 .photo-stage svg {
   position: absolute;
   inset: 0;
