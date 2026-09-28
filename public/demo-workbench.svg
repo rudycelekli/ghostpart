@@ -13,10 +13,27 @@
   <path d="M568 249l48 -34 19 43 -31 40 54 -5 33 -38 45 7" fill="none" stroke="#303c3b" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>
   <path d="M569 250l35 -22 12 32 -24 29" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M706 262l34 7" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round"/>
-  <rect x="573" y="355" width="160" height="160" fill="#f7f5ef" stroke="#171f20" stroke-width="5" filter="url(#shadow)"/>
-  <rect x="585" y="367" width="136" height="136" fill="none" stroke="#171f20" stroke-width="2"/>
-  <path d="M593 375h27v27M714 375h-27v27M593 495h27v-27M714 495h-27v-27" stroke="#171f20" stroke-width="5" fill="none"/>
-  <text x="653" y="436" font-family="Arial,sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#171f20">40 mm</text>
-  <text x="653" y="456" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" text-anchor="middle" fill="#171f20">GHOSTPART</text>
+  <!-- AUTO_MARKER_START -->
+  <g transform="translate(553 335) scale(20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="10" height="10" fill="white"/>
+    <rect x="1" y="1" width="8" height="8" fill="black"/>
+    <rect x="3" y="2" width="1" height="1" fill="white"/>
+    <rect x="5" y="2" width="1" height="1" fill="white"/>
+    <rect x="2" y="3" width="1" height="1" fill="white"/>
+    <rect x="5" y="3" width="1" height="1" fill="white"/>
+    <rect x="2" y="4" width="1" height="1" fill="white"/>
+    <rect x="6" y="4" width="1" height="1" fill="white"/>
+    <rect x="7" y="4" width="1" height="1" fill="white"/>
+    <rect x="5" y="5" width="1" height="1" fill="white"/>
+    <rect x="7" y="5" width="1" height="1" fill="white"/>
+    <rect x="3" y="6" width="1" height="1" fill="white"/>
+    <rect x="3" y="7" width="1" height="1" fill="white"/>
+    <rect x="4" y="7" width="1" height="1" fill="white"/>
+    <rect x="5" y="7" width="1" height="1" fill="white"/>
+    <rect x="6" y="7" width="1" height="1" fill="white"/>
+    <rect x="7" y="7" width="1" height="1" fill="white"/>
+  </g>
+  <text x="653" y="548" font-family="Arial,sans-serif" font-size="11" letter-spacing="1" text-anchor="middle" fill="#edf0eb">GHOSTPART / 40 mm</text>
+  <!-- AUTO_MARKER_END -->
   <text x="949" y="681" font-family="Arial,sans-serif" font-size="12" letter-spacing="2" fill="#4e3e31">SAMPLE CAPTURE  /  01</text>
 </svg>

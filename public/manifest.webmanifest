@@ -1,0 +1,14 @@
+{
+  "name": "GhostPart — Make What Is Missing",
+  "short_name": "GhostPart",
+  "description": "Measure, print, scan, and revise a repair part on your device.",
+  "start_url": "/ghostpart/",
+  "scope": "/ghostpart/",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#f5f1e8",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

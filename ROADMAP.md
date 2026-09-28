@@ -15,16 +15,16 @@ GhostPart advances by verified repairs, not by a list of generated meshes.
 
 ## Milestone 2: fit loop
 
-- Gather real printer feedback for the new three-size screw-clearance coupon and add more material-specific fit guidance.
-- Record actual first-print and second-print fit, including failures.
-- Produce a shareable repair receipt: source image, dimensions, design revision, material, and outcome.
+- Gather real printer feedback for the three-size screw-clearance coupon and add more material-specific fit guidance.
+- Validate the new two-hole fit scan and revision against measured physical parts. Record actual first-print and second-print fit, including failures.
+- Extend the local repair receipt with user-entered material, printer, and physical outcome. The current receipt has dimensions and design revision but omits the photo and unverified physical result.
 - Support simple knobs, spacers, and brackets using parametric families.
 
 **Research target:** at least 30 real parts across three families, with 70% fitting within two prints. This is a target, not a current result.
 
 ## Milestone 3: assisted reconstruction
 
-- On-device marker and hole proposals with human correction.
+- Improve the on-device marker proposal with subpixel refinement and camera distortion calibration. Add hole proposals with human correction.
 - Multi-view reconstruction of a mating surface where device APIs permit it.
 - Functional intent prompts and parametric CAD synthesis from constrained templates.
 - Device-specific depth adapters, explicitly tested against reference measurements.

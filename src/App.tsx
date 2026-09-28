@@ -10,6 +10,7 @@ import {
   MousePointer2,
   RotateCcw,
   ScanLine,
+  ScanSearch,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
@@ -18,6 +19,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { PartPreview } from "./components/PartPreview";
+import { FitWorkbench } from "./components/FitWorkbench";
 import {
   downloadFile,
   fitCouponDiameters,
@@ -33,6 +35,7 @@ import {
   type Quad,
 } from "./lib/measure";
 import { assessMeasurement } from "./lib/quality";
+import { detectGhostMarker } from "./lib/marker";
 import {
   imageToLocalJpeg,
   listLocalModels,
@@ -69,6 +72,7 @@ const initialOptions: Options = {
   holeDiameter: 5,
   cornerRadius: 4,
 };
+const asset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
 
 function formatMm(value: number) {
   return `${Number(value.toFixed(1))} mm`;
@@ -80,7 +84,7 @@ function formatTap(signature: TapSignature | null) {
 }
 
 export default function App() {
-  const [image, setImage] = useState("/demo-workbench.svg");
+  const [image, setImage] = useState(asset("demo-workbench.svg"));
   const [naturalSize, setNaturalSize] = useState({ width: 1200, height: 760 });
   const [isSample, setIsSample] = useState(true);
   const [corners, setCorners] = useState<Point[]>(sampleCorners);
@@ -101,6 +105,7 @@ export default function App() {
   });
   const [sensorError, setSensorError] = useState("");
   const [captureError, setCaptureError] = useState("");
+  const [findingMarker, setFindingMarker] = useState(false);
   const [tapBefore, setTapBefore] = useState<TapSignature | null>(null);
   const [tapAfter, setTapAfter] = useState<TapSignature | null>(null);
   const [tapBusy, setTapBusy] = useState<"before" | "after" | null>(null);
@@ -227,6 +232,34 @@ export default function App() {
     if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
     blobUrl.current = URL.createObjectURL(file);
     loadImage(blobUrl.current);
+  };
+
+  const findMarker = async () => {
+    setCaptureError("");
+    setFindingMarker(true);
+    try {
+      const found = await detectGhostMarker(image);
+      if (!found) {
+        setCaptureError(
+          "Automatic marker not found. Print the new marker, or mark four corners manually.",
+        );
+        return;
+      }
+      setCorners(found);
+      setHoles([]);
+      setSpanChecksMm([]);
+      setCornerClickRadiusPx(0.75);
+      setHoleClickRadiusPx(0);
+      setMode("holes");
+    } catch (error) {
+      setCaptureError(
+        error instanceof Error
+          ? error.message
+          : "Could not inspect this photo.",
+      );
+    } finally {
+      setFindingMarker(false);
+    }
   };
 
   const startCamera = async () => {
@@ -413,6 +446,7 @@ export default function App() {
         </a>
         <nav className="header-nav" aria-label="Main navigation">
           <a href="#workbench">Workbench</a>
+          <a href="#fit-loop">Fit loop</a>
           <a href="#intelligence">Intelligence</a>
           <a href="#how">How it works</a>
           <a
@@ -424,7 +458,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.2
+          <span /> OPEN SOURCE / V0.3
         </span>
       </header>
 
@@ -447,8 +481,12 @@ export default function App() {
               <a className="primary-action" href="#workbench">
                 Open the workbench <ChevronRight size={19} />
               </a>
-              <a className="text-action" href="/marker-40mm.svg" download>
-                Get the 40 mm marker <ArrowDownToLine size={17} />
+              <a
+                className="text-action"
+                href={asset("marker-auto-40mm.svg")}
+                download
+              >
+                Get the auto marker <ArrowDownToLine size={17} />
               </a>
             </div>
           </div>
@@ -523,10 +561,18 @@ export default function App() {
                   {cameraOn ? "Capture frame" : "Live camera"}
                 </button>
                 <button
+                  className="toolbar-button"
+                  onClick={findMarker}
+                  disabled={cameraOn || findingMarker}
+                >
+                  <ScanSearch size={17} />
+                  {findingMarker ? "Finding…" : "Find marker"}
+                </button>
+                <button
                   className="icon-button"
                   title="Load sample"
                   aria-label="Load sample"
-                  onClick={() => loadImage("/demo-workbench.svg", true)}
+                  onClick={() => loadImage(asset("demo-workbench.svg"), true)}
                 >
                   <RotateCcw size={18} />
                 </button>
@@ -969,10 +1015,20 @@ export default function App() {
           </div>
         </section>
 
+        <FitWorkbench
+          key={image}
+          basePlate={exportReady ? result.plate : null}
+          baseSpanMm={quality?.checks[0]?.measuredMm ?? 0}
+          markerSizeMm={
+            Number(markerMeasuredMm) > 0 ? Number(markerMeasuredMm) : 40
+          }
+          sample={isSample}
+        />
+
         <section className="ai-section" id="intelligence">
           <div className="section-heading">
             <div>
-              <div className="eyebrow">02 / REPAIR INTELLIGENCE</div>
+              <div className="eyebrow">03 / REPAIR INTELLIGENCE</div>
               <h2>Reason from evidence.</h2>
             </div>
             <p>
@@ -1118,7 +1174,7 @@ export default function App() {
         <section className="sensor-section" id="how">
           <div className="section-heading sensor-heading">
             <div>
-              <div className="eyebrow">03 / YOUR PHONE IS A WORKSHOP</div>
+              <div className="eyebrow">04 / YOUR PHONE IS A WORKSHOP</div>
               <h2>Use the sensors you already own.</h2>
             </div>
             <p>
@@ -1240,7 +1296,7 @@ export default function App() {
                 varies, so depth is on the roadmap rather than claimed as part
                 of this release.
               </p>
-              <span className="future-label">RESEARCH TRACK / NOT IN V0.2</span>
+              <span className="future-label">RESEARCH TRACK / NOT IN V0.3</span>
             </div>
           </div>
         </section>

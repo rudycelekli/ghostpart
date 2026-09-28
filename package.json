@@ -1,11 +1,11 @@
 {
   "name": "ghostpart",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/finalize-sw.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "format": "prettier --write src tests README.md ROADMAP.md CONTRIBUTING.md",
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "js-aruco2": "^2.0.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
