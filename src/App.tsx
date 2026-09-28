@@ -55,6 +55,11 @@ function formatMm(value: number) {
   return `${Number(value.toFixed(1))} mm`;
 }
 
+function formatTap(signature: TapSignature | null) {
+  if (!signature) return "—";
+  return `${signature.dominantHz} Hz · ${Math.round(20 * Math.log10(signature.loudness))} dBFS`;
+}
+
 export default function App() {
   const [image, setImage] = useState("/demo-workbench.svg");
   const [naturalSize, setNaturalSize] = useState({ width: 1200, height: 760 });
@@ -716,7 +721,7 @@ export default function App() {
               <h3>Hear the difference.</h3>
               <p>
                 Tap an object before and after repair. Compare its strongest
-                frequency and peak loudness locally.
+                frequency and relative signal level locally.
               </p>
               <div className="tap-actions">
                 <button
@@ -735,16 +740,10 @@ export default function App() {
               {(tapBefore || tapAfter) && (
                 <div className="sensor-readout">
                   <span>
-                    Before{" "}
-                    <strong>
-                      {tapBefore ? `${tapBefore.dominantHz} Hz` : "—"}
-                    </strong>
+                    Before <strong>{formatTap(tapBefore)}</strong>
                   </span>
                   <span>
-                    After{" "}
-                    <strong>
-                      {tapAfter ? `${tapAfter.dominantHz} Hz` : "—"}
-                    </strong>
+                    After <strong>{formatTap(tapAfter)}</strong>
                   </span>
                   <span>
                     Frequency is descriptive, not a structural safety test.
