@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <pattern id="wood" width="120" height="80" patternUnits="userSpaceOnUse"><path d="M0 9C32 7 83 13 120 9M0 42C52 46 86 37 120 41M0 73C41 69 74 78 120 72" stroke="#a4876d" stroke-width="2" fill="none" opacity=".16"/></pattern>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="13" flood-color="#594734" flood-opacity=".28"/></filter>
+  </defs>
+  <rect width="1200" height="760" fill="#c8ae91"/>
+  <rect width="1200" height="760" fill="url(#wood)"/>
+  <rect x="58" y="38" width="1095" height="704" rx="24" fill="#4f5b5b" filter="url(#shadow)"/>
+  <rect x="70" y="50" width="1070" height="680" rx="17" fill="#697171"/>
+  <path d="M380 390h550" stroke="#9ca4a0" stroke-width="5" opacity=".3"/>
+  <circle cx="533" cy="291" r="26" fill="#404d4b"/><circle cx="533" cy="291" r="16" fill="#c5bba6"/><circle cx="533" cy="291" r="8" fill="#5c6966"/>
+  <circle cx="773" cy="291" r="26" fill="#404d4b"/><circle cx="773" cy="291" r="16" fill="#c5bba6"/><circle cx="773" cy="291" r="8" fill="#5c6966"/>
+  <path d="M568 249l48 -34 19 43 -31 40 54 -5 33 -38 45 7" fill="none" stroke="#303c3b" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>
+  <path d="M569 250l35 -22 12 32 -24 29" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M706 262l34 7" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round"/>
+  <rect x="92" y="548" width="160" height="160" fill="#f7f5ef" stroke="#171f20" stroke-width="5" filter="url(#shadow)"/>
+  <rect x="104" y="560" width="136" height="136" fill="none" stroke="#171f20" stroke-width="2"/>
+  <path d="M112 568h27v27M233 568h-27v27M112 688h27v-27M233 688h-27v-27" stroke="#171f20" stroke-width="5" fill="none"/>
+  <text x="172" y="629" font-family="Arial,sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#171f20">40 mm</text>
+  <text x="172" y="649" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" text-anchor="middle" fill="#171f20">GHOSTPART</text>
+  <text x="949" y="681" font-family="Arial,sans-serif" font-size="12" letter-spacing="2" fill="#4e3e31">SAMPLE CAPTURE  /  01</text>
+</svg>

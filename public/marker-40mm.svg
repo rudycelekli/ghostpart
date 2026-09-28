@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40mm" height="40mm" viewBox="0 0 40 40">
+  <rect width="40" height="40" fill="#f8f7f2"/>
+  <rect x="0.5" y="0.5" width="39" height="39" fill="none" stroke="#182020" stroke-width="1"/>
+  <rect x="3" y="3" width="34" height="34" fill="none" stroke="#182020" stroke-width=".4"/>
+  <path d="M5 12V5h7M28 5h7v7M35 28v7h-7M12 35H5v-7" fill="none" stroke="#182020" stroke-width="1.2"/>
+  <text x="20" y="21" font-family="Arial,sans-serif" font-size="4" font-weight="bold" text-anchor="middle" fill="#182020">40 mm</text>
+  <text x="20" y="25" font-family="Arial,sans-serif" font-size="2.2" letter-spacing=".4" text-anchor="middle" fill="#182020">GHOSTPART</text>
+</svg>
