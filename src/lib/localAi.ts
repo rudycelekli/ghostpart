@@ -143,6 +143,9 @@ export async function requestRepairAdvice(input: {
       firstHoleSpacingMm: quality.spanMm,
       independentlyCheckedSpacings: quality.checks,
       simulatedPointPlacementRangeMm: quality.clickIntervalMm,
+      simulatedRangesByPairMm: quality.checks.map(
+        (check) => check.clickIntervalMm,
+      ),
     },
     proposedCad: plate,
     measurementCautions: quality.notes,

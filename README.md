@@ -15,6 +15,8 @@ npm run dev
 
 Open the [hosted HTTPS app](https://rudycelekli.github.io/ghostpart/) on a phone, or use the local URL printed by Vite. The sample project is loaded by default. Rotate the 3D part, change fit controls, and download an STL or editable OpenSCAD file. No account, cloud API, model key, or photo upload service is involved.
 
+Before measuring a real object, print the [accuracy check card](public/accuracy-check-40mm.svg) and follow the [five-photo pretest](PRETEST.md). It tests the phone capture and calibration workflow against physical ruler or caliper readings.
+
 ## Repair something
 
 1. Download and print the [automatic calibration marker](public/marker-auto-40mm.svg) at **100% scale**, without “fit to page.” Its **black square**, rather than the whole white card, must measure 40 mm. Check it with a ruler. The [older manual marker](public/marker-40mm.svg) remains available.
@@ -40,6 +42,7 @@ Open the [hosted HTTPS app](https://rudycelekli.github.io/ghostpart/) on a phone
 - An HTTPS, installable web app published by GitHub Pages. The app shell can work offline after its assets are cached; Ollama reasoning still needs a local model running.
 - Optional microphone tap comparison before and after a repair. It reports the strongest frequency of the loudest captured moment; it is **not** a strength or safety assessment.
 - A working sample project and a printable calibration marker.
+- A printable accuracy check card and repeatability protocol for a pre-repair bench check.
 
 ### Boundaries
 

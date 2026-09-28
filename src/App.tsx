@@ -577,6 +577,21 @@ export default function App() {
                   <RotateCcw size={18} />
                 </button>
               </div>
+              <p className="accuracy-check-link">
+                Before a real repair, print the{" "}
+                <a href={asset("accuracy-check-40mm.svg")} download>
+                  accuracy check card
+                </a>{" "}
+                and run the{" "}
+                <a
+                  href="https://github.com/rudycelekli/ghostpart/blob/main/PRETEST.md"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  five-photo check
+                </a>
+                .
+              </p>
               {captureError && (
                 <p className="inline-error" role="alert">
                   {captureError}
@@ -808,26 +823,28 @@ export default function App() {
                 </div>
                 {quality && (
                   <div className="review-results">
-                    <span>
-                      Photo span H1 → H2{" "}
-                      <strong>{formatMm(quality.spanMm)}</strong>
-                    </span>
-                    <span>
-                      Simulated click range (5–95%){" "}
-                      <strong>
-                        {formatMm(quality.clickIntervalMm[0])}–
-                        {formatMm(quality.clickIntervalMm[1])}
-                      </strong>
-                    </span>
                     {quality.checks.map((check, index) => (
-                      <span key={index}>
-                        H1 → H{index + 2} difference{" "}
-                        <strong>
-                          {check.differenceMm == null
-                            ? "awaiting check"
-                            : formatMm(check.differenceMm)}
-                        </strong>
-                      </span>
+                      <div className="review-pair" key={index}>
+                        <span>
+                          Photo span H1 → H{index + 2}{" "}
+                          <strong>{formatMm(check.spanMm)}</strong>
+                        </span>
+                        <span>
+                          Simulated click range (5–95%){" "}
+                          <strong>
+                            {formatMm(check.clickIntervalMm[0])}–
+                            {formatMm(check.clickIntervalMm[1])}
+                          </strong>
+                        </span>
+                        <span>
+                          Difference{" "}
+                          <strong>
+                            {check.differenceMm == null
+                              ? "awaiting check"
+                              : formatMm(check.differenceMm)}
+                          </strong>
+                        </span>
+                      </div>
                     ))}
                   </div>
                 )}

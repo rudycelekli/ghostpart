@@ -1,4 +1,4 @@
-const CACHE = "ghostpart-v0.3.1-shell";
+const CACHE = "ghostpart-v0.3.2-shell";
 const base = new URL(self.registration.scope);
 const buildAssets = /* BUILD_ASSETS */ [];
 const shell = [
@@ -6,6 +6,7 @@ const shell = [
   "demo-workbench.svg",
   "demo-fit.svg",
   "marker-auto-40mm.svg",
+  "accuracy-check-40mm.svg",
   "marker-40mm.svg",
   "manifest.webmanifest",
   "icon-192.png",

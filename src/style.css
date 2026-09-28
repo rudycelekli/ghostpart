@@ -384,6 +384,18 @@ footer a:hover {
   align-items: center;
   margin: 19px 0 13px;
 }
+.accuracy-check-link {
+  margin: -3px 0 13px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #657066;
+}
+.accuracy-check-link a {
+  color: #a84930;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .toolbar-button,
 .icon-button {
   height: 39px;
@@ -655,6 +667,12 @@ footer a:hover {
   border-top: 1px solid #d9d4c8;
   margin-top: 15px;
   padding-top: 13px;
+}
+.review-pair {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e0d5;
 }
 .review-results span {
   display: flex;

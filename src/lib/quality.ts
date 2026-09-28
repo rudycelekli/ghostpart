@@ -12,6 +12,7 @@ export type MeasurementQuality = {
   maxReachInMarkerWidths: number;
   checks: {
     spanMm: number;
+    clickIntervalMm: [number, number];
     measuredMm: number | null;
     differenceMm: number | null;
     toleranceMm: number | null;
@@ -112,28 +113,32 @@ export function assessMeasurement(input: {
       ),
     ) /
     (edges.reduce((sum, edge) => sum + edge, 0) / 4);
-  const clickIntervalMm = clickSensitivity(
-    corners,
-    holes,
-    markerSizeMm,
-    clickRadiusPx,
-  );
   const checks = holes.slice(1).map((_, index) => {
     const measuredMm = independentSpansMm[index] ?? null;
-    const predictedMm = measuredHoleSpan(h, [holes[0], holes[index + 1]]);
+    const pair = [holes[0], holes[index + 1]];
+    const predictedMm = measuredHoleSpan(h, pair);
     return {
       spanMm: predictedMm,
+      clickIntervalMm: clickSensitivity(
+        corners,
+        pair,
+        markerSizeMm,
+        clickRadiusPx,
+      ),
       measuredMm,
       differenceMm:
         measuredMm == null ? null : Math.abs(predictedMm - measuredMm),
       toleranceMm: measuredMm == null ? null : Math.max(0.5, measuredMm * 0.02),
     };
   });
-  const placementWidthMm = clickIntervalMm[1] - clickIntervalMm[0];
+  const clickIntervalMm = checks[0].clickIntervalMm;
+  const unstableCheck = checks.some(
+    (check) =>
+      check.clickIntervalMm[1] - check.clickIntervalMm[0] >
+      Math.max(1.5, check.spanMm * 0.02),
+  );
   const captureUnstable =
-    markerMinEdgePx < 100 ||
-    maxReachInMarkerWidths > 3 ||
-    placementWidthMm > Math.max(1.5, spanMm * 0.02);
+    markerMinEdgePx < 100 || maxReachInMarkerWidths > 3 || unstableCheck;
   const status = !markerScaleChecked
     ? "needs-scale"
     : checks.some((check) => check.measuredMm == null)
@@ -152,7 +157,7 @@ export function assessMeasurement(input: {
     notes.push(
       "The holes are far from the marker. Move the marker nearer to reduce extrapolation and lens-distortion risk.",
     );
-  if (placementWidthMm > Math.max(1.5, spanMm * 0.02))
+  if (unstableCheck)
     notes.push(
       "Point placement changes the spacing noticeably. Zoom in and re-mark the corners and holes.",
     );

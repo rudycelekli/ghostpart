@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build && node scripts/finalize-sw.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
-    "format": "prettier --write src tests README.md ROADMAP.md CONTRIBUTING.md",
-    "format:check": "prettier --check src tests README.md ROADMAP.md CONTRIBUTING.md",
+    "format": "prettier --write src tests scripts/*.mjs README.md ROADMAP.md CONTRIBUTING.md PRETEST.md",
+    "format:check": "prettier --check src tests scripts/*.mjs README.md ROADMAP.md CONTRIBUTING.md PRETEST.md",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

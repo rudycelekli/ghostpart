@@ -18,7 +18,14 @@ body:
     id: measurements
     attributes:
       label: Independent measurements
-      description: Include hole spacing, thickness, and a ruler or caliper reading in millimetres.
+      description: Include target hole spacing, the printed marker side, and the tool used (calipers or ruler), all in millimetres. Record the values before looking at the app's estimate.
+    validations:
+      required: true
+  - type: textarea
+    id: preflight
+    attributes:
+      label: Phone accuracy check
+      description: Report the five-photo card result from PRETEST.md, including blocked scans and the range of reported spans. Include phone, browser, and whether auto marker detection worked.
     validations:
       required: true
   - type: textarea
@@ -32,7 +39,7 @@ body:
     id: fabrication
     attributes:
       label: Print and fit result
-      description: State printer, material, settings, number of prints, and whether each print fit. Failed attempts matter.
+      description: State printer, material, settings, clearance coupon choice, number of prints, physically measured spacing of each print, and whether each print fit. Failed attempts matter.
     validations:
       required: true
   - type: textarea

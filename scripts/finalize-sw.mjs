@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const outputDir = fileURLToPath(new URL("../dist/", import.meta.url));
 const assetDir = join(outputDir, "assets");
-const assets = (await readdir(assetDir, { recursive: true, withFileTypes: true }))
+const assets = (
+  await readdir(assetDir, { recursive: true, withFileTypes: true })
+)
   .filter((entry) => entry.isFile())
   .map((entry) => relative(outputDir, join(entry.parentPath, entry.name)));
 const swPath = join(outputDir, "sw.js");
