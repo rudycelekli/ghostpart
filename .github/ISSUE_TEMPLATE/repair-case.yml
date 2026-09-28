@@ -1,0 +1,42 @@
+name: Real repair case
+description: Document a physical repair, including failed prints and fit measurements.
+title: "Repair case: "
+labels: [repair-case]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing GhostPart on a real object. Share only images you have permission to publish. Remove faces, addresses, financial cards, and other personal details. Safety-critical repairs are out of scope.
+  - type: input
+    id: object
+    attributes:
+      label: What broke?
+      placeholder: e.g. a drawer mounting plate
+    validations:
+      required: true
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Independent measurements
+      description: Include hole spacing, thickness, and a ruler or caliper reading in millimetres.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: GhostPart design
+      description: Include generated dimensions and, if possible, the editable OpenSCAD file or a link.
+    validations:
+      required: true
+  - type: textarea
+    id: fabrication
+    attributes:
+      label: Print and fit result
+      description: State printer, material, settings, number of prints, and whether each print fit. Failed attempts matter.
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Photos or video
+      description: Add before, measurement, print, and installed-part images if you can share them.

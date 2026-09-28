@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a reproducible measurement, CAD, or browser problem.
+title: "Bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the expected result and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Device and browser
+      placeholder: e.g. iPhone 16, iOS 20, Safari
+    validations:
+      required: true
+  - type: textarea
+    id: measurement
+    attributes:
+      label: Measurement or export details
+      description: If relevant, include marker size, hole spacing, expected dimensions, and actual dimensions.
