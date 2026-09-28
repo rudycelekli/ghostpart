@@ -1,5 +1,5 @@
 import {
-  calibrationTransform,
+  calibrationTransformRectangle,
   transformPoint,
   validatePlate,
   type Plate,
@@ -38,6 +38,7 @@ function spacing(points: Point[]): number {
 export function assessFit(input: {
   marker: Quad;
   markerSizeMm: number;
+  referenceHeightMm?: number;
   targetHoles: Point[];
   printedHoles: Point[];
   basePlate: Plate;
@@ -48,6 +49,7 @@ export function assessFit(input: {
   const {
     marker,
     markerSizeMm,
+    referenceHeightMm = markerSizeMm,
     targetHoles,
     printedHoles,
     basePlate,
@@ -69,7 +71,11 @@ export function assessFit(input: {
   )
     throw new Error("A verified baseline spacing is required.");
   validatePlate(basePlate);
-  const h = calibrationTransform(marker, markerSizeMm);
+  const h = calibrationTransformRectangle(
+    marker,
+    markerSizeMm,
+    referenceHeightMm,
+  );
   const target = targetHoles.map((point) => transformPoint(h, point));
   const printed = printedHoles.map((point) => transformPoint(h, point));
   const targetSpacingMm = spacing(target);
@@ -96,12 +102,14 @@ export function assessFit(input: {
     targetHoles,
     markerSizeMm,
     clickRadiusPx,
+    referenceHeightMm,
   );
   const printedClickRangeMm = clickSensitivity(
     marker,
     printedHoles,
     markerSizeMm,
     clickRadiusPx,
+    referenceHeightMm,
   );
   const markerMinEdgePx = Math.min(
     ...marker.map((p, index) =>
@@ -141,7 +149,7 @@ export function assessFit(input: {
   if (targetAgreementMm > Math.max(0.5, independentlyCheckedSpanMm * 0.02))
     return result(
       "target-mismatch",
-      "The target spacing in this photo disagrees with the original independent check. Recheck the marker, plane, and hole centers.",
+      "The target spacing in this photo disagrees with the original independent check. Recheck the reference, plane, and hole centers.",
     );
   if (checkedPrintedSpacingMm === null)
     return result(

@@ -2,7 +2,7 @@
 
 **Make what is missing.** GhostPart is an open-source, local-first repair workbench. Its first release measures flat mounting points from a phone photo and generates a printable, editable replacement plate.
 
-> **Status: experimental v0.4.1.** This is a working planar repair tool with a guided accuracy check and an early fit revision loop. Real-world fit and strength are unverified.
+> **Status: experimental v0.5.0.** This is a working planar repair tool with printed and paperless reference modes, a guided printed-card accuracy check, and an early fit revision loop. Real-world fit and strength are unverified.
 
 **[Try GhostPart in your browser →](https://rudycelekli.github.io/ghostpart/)** Public HTTPS app. Works on phones; no account or install required.
 
@@ -17,9 +17,17 @@ npm run dev
 
 Open the [hosted HTTPS app](https://rudycelekli.github.io/ghostpart/) on a phone, or use the local URL printed by Vite. The sample project is loaded by default. Rotate the 3D part, change fit controls, and download an STL or editable OpenSCAD file. No account, cloud API, model key, or photo upload service is involved.
 
-Before measuring a real object, print the [accuracy check card](public/accuracy-check-40mm.svg) and run the app's **Accuracy check** with five new photos. The [pretest guide](PRETEST.md) explains the physical readings and pass rule. The app locks the measured values across captures, checks each view against them, saves the session on this device, and exports a photo-free JSON report or CSV scan table.
+For the printed-marker workflow, first print the [accuracy check card](public/accuracy-check-40mm.svg) and run the app's **Accuracy check** with five new photos. The [pretest guide](PRETEST.md) explains the physical readings and pass rule. The app locks the measured values across captures, checks each view against them, saves the session on this device, and exports a photo-free JSON report or CSV scan table.
+
+### No-printer capture
+
+Select **No printer · measured rectangle**. Place a rigid, flat rectangular object with four clear corners next to the holes on the _same plane_. Measure its actual width and height with a ruler or calipers; do not rely on a nominal product size. Add a photo, mark its corners clockwise from top left, then mark at least two hole centers. Width is edge 1→2 and height is edge 2→3. Enter both reference dimensions and independently measure every hole spacing. Exports remain locked until the measurements agree and point placement is stable. For the fit loop, use the same measured rectangle again beside both target and printed holes.
+
+This removes the printed card, **not** the need for a physical scale measurement. The five-photo Accuracy check currently requires its own printed card and does not certify the paperless reference. A rigid rectangle can have rounded or obscured corners, thickness, or placement on another plane; reject those captures. If you cannot measure two sides and a hole spacing independently, do not treat the generated dimensions as verified.
 
 ## Repair something
+
+For the printed-marker route:
 
 1. Download and print the [automatic calibration marker](public/marker-auto-40mm.svg) at **100% scale**, without “fit to page.” Its **black square**, rather than the whole white card, must measure 40 mm. Check it with a ruler. The [older manual marker](public/marker-40mm.svg) remains available.
 2. Put the marker on the **same flat plane** as the mounting holes. Take a sharp photo as square-on as practical. The camera, motion, and orientation controls work best in a secure browser context (HTTPS or localhost).
@@ -33,7 +41,7 @@ Before measuring a real object, print the [accuracy check card](public/accuracy-
 
 ### What works today
 
-- Perspective-corrected planar measurements from a manually marked 40 mm reference square.
+- Perspective-corrected planar measurements from a verified printed square or a measured rigid rectangle.
 - Automatic ArUco marker proposals with manual correction. A detected marker is still subject to measurement review.
 - A measurement review that compares the photo with independently entered marker and hole-spacing measurements, simulates point-placement sensitivity, and blocks exports when the capture is unstable or the checks disagree.
 - Browser camera capture or image upload, with all processing on the device.
@@ -50,13 +58,13 @@ Before measuring a real object, print the [accuracy check card](public/accuracy-
 
 ### Boundaries
 
-The marker and measured holes must be coplanar. Lens distortion, a bent marker, imprecise clicks, or a marker printed at the wrong scale can spoil fit. Automatic marker detection does **not** correct lens distortion. The point-placement range is a reproducible sensitivity simulation, **not** a statistical confidence interval or a complete error bound. The independent check is limited by your ruler or caliper technique. The fit loop corrects two-hole spacing only; it cannot infer a hidden hole center from an occluded photo or establish structural safety. Neither code nor AI infers hidden geometry, load capacity, material strength, printer tolerance, or whether a repair is safe. Do not use it for structural, electrical, medical, vehicle, or other safety-critical parts.
+The reference and measured holes must be coplanar. Lens distortion, a bent reference, imprecise clicks, or an incorrect reference measurement can spoil fit. Automatic marker detection does **not** correct lens distortion. The point-placement range is a reproducible sensitivity simulation, **not** a statistical confidence interval or a complete error bound. The independent check is limited by your ruler or caliper technique. The fit loop corrects two-hole spacing only; it cannot infer a hidden hole center from an occluded photo or establish structural safety. Neither code nor AI infers hidden geometry, load capacity, material strength, printer tolerance, or whether a repair is safe. Do not use it for structural, electrical, medical, vehicle, or other safety-critical parts.
 
 ### Optional local AI
 
 Install [Ollama](https://ollama.com/) separately and start a model on the same device. Click **Connect Ollama on this device**, choose a model, describe the repair, and click **Analyze this repair** after measurements are cross-checked. The app uses Ollama's [chat API](https://docs.ollama.com/api/chat) with structured JSON output. A [vision-capable model](https://docs.ollama.com/capabilities/vision) can also receive the photo when you explicitly select that option. The app connects only to `127.0.0.1:11434`; it has no cloud fallback. AI output is unverified advice, never measurement authority.
 
-Phone depth APIs vary by device and browser. Native depth and 3D reconstruction are research tracks, not v0.4 features.
+Phone motion and orientation can help capture a steadier photo, but cannot establish absolute millimetre scale. On supported devices, native [ARKit scene depth](https://developer.apple.com/documentation/arkit/arframe/scenedepth) or [ARCore Raw Depth](https://developers.google.com/ar/develop/java/depth/raw-depth) could offer metric depth and per-pixel confidence. These APIs need device-specific testing against real repair measurements before they can unlock CAD export; GhostPart does not yet use depth as a scale source. [WebXR depth](https://developer.mozilla.org/en-US/docs/Web/API/XRSession/depthUsage) has limited browser availability.
 
 ## Why this exists
 

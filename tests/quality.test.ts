@@ -60,6 +60,36 @@ describe("measurement review", () => {
     expect(uncertain[1]).toBeGreaterThan(40);
   });
 
+  it("requires an independent hole check for a measured rectangular reference", () => {
+    const rectangle: Quad = [
+      { x: 100, y: 100 },
+      { x: 500, y: 100 },
+      { x: 500, y: 250 },
+      { x: 100, y: 250 },
+    ];
+    const pair = [
+      { x: 150, y: 175 },
+      { x: 550, y: 175 },
+    ];
+    const base = {
+      corners: rectangle,
+      holes: pair,
+      markerSizeMm: 80,
+      referenceHeightMm: 30,
+      markerScaleChecked: true,
+      clickRadiusPx: 0.1,
+    };
+    expect(
+      assessMeasurement({ ...base, independentSpansMm: [null] }).status,
+    ).toBe("needs-check");
+    const checked = assessMeasurement({
+      ...base,
+      independentSpansMm: [80],
+    });
+    expect(checked.spanMm).toBeCloseTo(80);
+    expect(checked.status).toBe("cross-checked");
+  });
+
   it("blocks export when a cross-checked capture is too sensitive to point placement", () => {
     const quality = assessMeasurement({
       corners,

@@ -3,10 +3,24 @@ export type Quad = [Point, Point, Point, Point];
 
 /** Maps four image points (clockwise from top left) to a square in millimetres. */
 export function calibrationTransform(corners: Quad, sizeMm: number): number[] {
-  if (!Number.isFinite(sizeMm) || sizeMm <= 0)
-    throw new Error("Marker size must be positive.");
+  return calibrationTransformRectangle(corners, sizeMm, sizeMm);
+}
+
+/** Maps four corners of a measured planar rectangle to physical millimetres. */
+export function calibrationTransformRectangle(
+  corners: Quad,
+  widthMm: number,
+  heightMm: number,
+): number[] {
+  if (
+    !Number.isFinite(widthMm) ||
+    widthMm <= 0 ||
+    !Number.isFinite(heightMm) ||
+    heightMm <= 0
+  )
+    throw new Error("Reference width and height must be positive.");
   if (!corners.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)))
-    throw new Error("Marker corners must be finite points.");
+    throw new Error("Reference corners must be finite points.");
   const turns = corners.map((point, index) => {
     const next = corners[(index + 1) % 4];
     const after = corners[(index + 2) % 4];
@@ -19,12 +33,14 @@ export function calibrationTransform(corners: Quad, sizeMm: number): number[] {
     turns.some((turn) => Math.abs(turn) < 1e-6) ||
     turns.some((turn) => Math.sign(turn) !== Math.sign(turns[0]))
   )
-    throw new Error("Marker corners must trace a convex square in order.");
+    throw new Error(
+      "Reference corners must trace a convex rectangle in order.",
+    );
   const target: Quad = [
     { x: 0, y: 0 },
-    { x: sizeMm, y: 0 },
-    { x: sizeMm, y: sizeMm },
-    { x: 0, y: sizeMm },
+    { x: widthMm, y: 0 },
+    { x: widthMm, y: heightMm },
+    { x: 0, y: heightMm },
   ];
   const rows: number[][] = [];
   for (let i = 0; i < 4; i += 1) {
@@ -39,7 +55,7 @@ export function calibrationTransform(corners: Quad, sizeMm: number): number[] {
       if (Math.abs(rows[row][col]) > Math.abs(rows[pivot][col])) pivot = row;
     }
     if (Math.abs(rows[pivot][col]) < 1e-10)
-      throw new Error("Marker corners are too close or out of order.");
+      throw new Error("Reference corners are too close or out of order.");
     [rows[col], rows[pivot]] = [rows[pivot], rows[col]];
     const divisor = rows[col][col];
     for (let j = col; j <= 8; j += 1) rows[col][j] /= divisor;

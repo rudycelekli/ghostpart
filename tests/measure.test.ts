@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calibrationTransform,
+  calibrationTransformRectangle,
   plateFromImagePoints,
   transformPoint,
   validatePlate,
@@ -48,6 +49,28 @@ describe("planar calibration", () => {
       expect(transformPoint(h, tilted[i]).x).toBeCloseTo(target.x);
       expect(transformPoint(h, tilted[i]).y).toBeCloseTo(target.y);
     }
+  });
+
+  it("recovers a non-square measured rectangle under perspective", () => {
+    const physicalCorners: Quad = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 30 },
+      { x: 0, y: 30 },
+    ];
+    const project = ({ x, y }: { x: number; y: number }) => ({
+      x: (200 + 4 * x + 0.3 * y) / (1 + 0.001 * x + 0.002 * y),
+      y: (120 + 0.4 * x + 5 * y) / (1 + 0.001 * x + 0.002 * y),
+    });
+    const h = calibrationTransformRectangle(
+      physicalCorners.map(project) as Quad,
+      80,
+      30,
+    );
+    const recovered = transformPoint(h, project({ x: 105, y: 15 }));
+    expect(recovered.x).toBeCloseTo(105, 6);
+    expect(recovered.y).toBeCloseTo(15, 6);
+    expect(() => calibrationTransformRectangle(marker, 80, 0)).toThrow();
   });
 
   it("rejects a degenerate marker", () => {

@@ -30,7 +30,7 @@ import {
   stlFromPlate,
 } from "./lib/cad";
 import {
-  calibrationTransform,
+  calibrationTransformRectangle,
   plateFromImagePoints,
   type Point,
   type Quad,
@@ -56,6 +56,7 @@ import {
 } from "./lib/sensors";
 
 type Mode = "marker" | "holes" | "preview";
+type ReferenceMode = "printed" | "measured";
 type Options = {
   margin: number;
   thickness: number;
@@ -101,6 +102,8 @@ export default function App() {
   const [cornerClickRadiusPx, setCornerClickRadiusPx] = useState(0.1);
   const [holeClickRadiusPx, setHoleClickRadiusPx] = useState(0.1);
   const [markerMeasuredMm, setMarkerMeasuredMm] = useState("40");
+  const [referenceHeightMm, setReferenceHeightMm] = useState("40");
+  const [referenceMode, setReferenceMode] = useState<ReferenceMode>("printed");
   const [markerScaleChecked, setMarkerScaleChecked] = useState(true);
   const [spanChecksMm, setSpanChecksMm] = useState<string[]>(["60"]);
   const [cameraOn, setCameraOn] = useState(false);
@@ -243,12 +246,15 @@ export default function App() {
   const calibration = useMemo(() => {
     if (corners.length !== 4) return null;
     try {
-      const size = Number(markerMeasuredMm);
-      return calibrationTransform(corners as Quad, size > 0 ? size : 40);
+      const width = Number(markerMeasuredMm);
+      const height =
+        referenceMode === "printed" ? width : Number(referenceHeightMm);
+      if (width <= 0 || height <= 0) return null;
+      return calibrationTransformRectangle(corners as Quad, width, height);
     } catch {
       return null;
     }
-  }, [corners, markerMeasuredMm]);
+  }, [corners, markerMeasuredMm, referenceHeightMm, referenceMode]);
 
   const quality = useMemo(() => {
     if (!calibration || corners.length !== 4 || holes.length < 2) return null;
@@ -256,9 +262,12 @@ export default function App() {
       return assessMeasurement({
         corners: corners as Quad,
         holes,
-        markerSizeMm:
-          Number(markerMeasuredMm) > 0 ? Number(markerMeasuredMm) : 40,
-        markerScaleChecked: markerScaleChecked && Number(markerMeasuredMm) > 0,
+        markerSizeMm: Number(markerMeasuredMm),
+        referenceHeightMm:
+          referenceMode === "printed"
+            ? Number(markerMeasuredMm)
+            : Number(referenceHeightMm),
+        markerScaleChecked,
         independentSpansMm: holes.slice(1).map((_, index) => {
           const value = Number(spanChecksMm[index]);
           return value > 0 ? value : null;
@@ -273,6 +282,8 @@ export default function App() {
     corners,
     holes,
     markerMeasuredMm,
+    referenceHeightMm,
+    referenceMode,
     markerScaleChecked,
     spanChecksMm,
     cornerClickRadiusPx,
@@ -326,6 +337,11 @@ export default function App() {
 
   const changePreflightSession = (next: PreflightSession | null) => {
     if (!preflightSession && next && !isSample) {
+      setReferenceMode("printed");
+      setReferenceHeightMm(String(next.reference.markerSideMm));
+      setCorners([]);
+      setHoles([]);
+      setMode("marker");
       setMarkerMeasuredMm(String(next.reference.markerSideMm));
       setMarkerScaleChecked(true);
       setSpanChecksMm([
@@ -360,6 +376,8 @@ export default function App() {
           ? String(preflightReference.markerSideMm)
           : "",
     );
+    setReferenceHeightMm(sample ? "40" : "");
+    if (sample || preflightReference) setReferenceMode("printed");
     setMarkerScaleChecked(sample || !!preflightReference);
     setSpanChecksMm(sample ? ["60"] : lockedPreflightSpans);
     setRepairGoal(
@@ -381,6 +399,7 @@ export default function App() {
   };
 
   const findMarker = async () => {
+    if (referenceMode !== "printed") return;
     setCaptureError("");
     setFindingMarker(true);
     setAutoMarkerFound(false);
@@ -408,6 +427,21 @@ export default function App() {
     } finally {
       setFindingMarker(false);
     }
+  };
+
+  const changeReferenceMode = (next: ReferenceMode) => {
+    if (next === referenceMode) return;
+    setReferenceMode(next);
+    setCorners([]);
+    setHoles([]);
+    setMode("marker");
+    setMarkerMeasuredMm("");
+    setReferenceHeightMm("");
+    setMarkerScaleChecked(false);
+    setSpanChecksMm([]);
+    setAutoMarkerFound(false);
+    setCornerClickRadiusPx(0);
+    setHoleClickRadiusPx(0);
   };
 
   const startCamera = async () => {
@@ -647,7 +681,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.4.1
+          <span /> OPEN SOURCE / V0.5.0
         </span>
       </header>
 
@@ -718,10 +752,33 @@ export default function App() {
                 <div>
                   <h3>Capture & measure</h3>
                   <p>
-                    Place the printed marker on the same flat surface as the
-                    mounting holes.
+                    {referenceMode === "printed"
+                      ? "Place the printed marker on the same flat surface as the mounting holes."
+                      : "Place a rigid rectangular object beside the holes on the same flat surface. Measure its width and height."}
                   </p>
                 </div>
+              </div>
+              <div
+                className="reference-mode"
+                role="group"
+                aria-label="Calibration reference"
+              >
+                <button
+                  className={referenceMode === "printed" ? "active" : ""}
+                  onClick={() => changeReferenceMode("printed")}
+                  disabled={!!preflightReference}
+                  aria-pressed={referenceMode === "printed"}
+                >
+                  Printed marker
+                </button>
+                <button
+                  className={referenceMode === "measured" ? "active" : ""}
+                  onClick={() => changeReferenceMode("measured")}
+                  disabled={!!preflightReference}
+                  aria-pressed={referenceMode === "measured"}
+                >
+                  No printer · measured rectangle
+                </button>
               </div>
               <div className="capture-toolbar">
                 <button
@@ -761,14 +818,16 @@ export default function App() {
                     Stop camera
                   </button>
                 )}
-                <button
-                  className="toolbar-button"
-                  onClick={findMarker}
-                  disabled={cameraOn || cameraStarting || findingMarker}
-                >
-                  <ScanSearch size={17} />
-                  {findingMarker ? "Finding…" : "Find marker"}
-                </button>
+                {referenceMode === "printed" && (
+                  <button
+                    className="toolbar-button"
+                    onClick={findMarker}
+                    disabled={cameraOn || cameraStarting || findingMarker}
+                  >
+                    <ScanSearch size={17} />
+                    {findingMarker ? "Finding…" : "Find marker"}
+                  </button>
+                )}
                 <button
                   className="icon-button"
                   title="Load sample"
@@ -779,19 +838,25 @@ export default function App() {
                 </button>
               </div>
               <p className="accuracy-check-link">
-                Before a real repair, print the{" "}
-                <a href={asset("accuracy-check-40mm.svg")} download>
-                  accuracy check card
-                </a>{" "}
-                and run the{" "}
-                <a
-                  href="https://github.com/rudycelekli/ghostpart/blob/main/PRETEST.md"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  five-photo check
-                </a>
-                .
+                {referenceMode === "printed" ? (
+                  <>
+                    Before a real repair, print the{" "}
+                    <a href={asset("accuracy-check-40mm.svg")} download>
+                      accuracy check card
+                    </a>{" "}
+                    and run the{" "}
+                    <a
+                      href="https://github.com/rudycelekli/ghostpart/blob/main/PRETEST.md"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      five-photo check
+                    </a>
+                    .
+                  </>
+                ) : (
+                  "No print needed. Use a flat, rigid rectangle with four visible corners. Measure edge 1→2 as width and 2→3 as height; a nominal size is not enough."
+                )}
               </p>
               {captureError && (
                 <p className="inline-error" role="alert">
@@ -925,7 +990,7 @@ export default function App() {
                     setMode("marker");
                   }}
                 >
-                  <span>1</span> Mark 4 marker corners
+                  <span>1</span> Mark 4 reference corners
                 </button>
                 <button
                   className={mode === "holes" ? "active" : ""}
@@ -950,10 +1015,10 @@ export default function App() {
               <p className="helper-line">
                 <MousePointer2 size={16} />{" "}
                 {mode === "marker"
-                  ? `Tap the outer marker corners clockwise, starting top left (${corners.length}/4).`
+                  ? `Tap the outer ${referenceMode === "printed" ? "marker" : "rectangle"} corners clockwise, starting top left (${corners.length}/4).`
                   : mode === "holes"
                     ? `Tap the center of each mounting hole (${holes.length} marked). Add at least two, then build.`
-                    : "Tap a step to remeasure. The marker and holes must share a flat plane."}
+                    : "Tap a step to remeasure. The reference and holes must share a flat plane."}
               </p>
               <div className="measurement-review">
                 <div className="review-heading">
@@ -976,12 +1041,18 @@ export default function App() {
                   </span>
                 </div>
                 <p>
-                  Measure the printed marker and each hole spacing
-                  independently. Export unlocks when they agree.
+                  Measure the{" "}
+                  {referenceMode === "printed"
+                    ? "printed marker"
+                    : "reference width and height"}{" "}
+                  and each hole spacing independently. Export unlocks when they
+                  agree.
                 </p>
                 <div className="review-inputs">
                   <label>
-                    Printed marker side{" "}
+                    {referenceMode === "printed"
+                      ? "Printed marker side"
+                      : "Reference width"}{" "}
                     <div>
                       <input
                         type="number"
@@ -998,6 +1069,25 @@ export default function App() {
                       <span>mm</span>
                     </div>
                   </label>
+                  {referenceMode === "measured" && (
+                    <label>
+                      Reference height{" "}
+                      <div>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.1"
+                          value={referenceHeightMm}
+                          onChange={(event) => {
+                            setReferenceHeightMm(event.target.value);
+                            setMarkerScaleChecked(false);
+                          }}
+                          placeholder="Measured"
+                        />
+                        <span>mm</span>
+                      </div>
+                    </label>
+                  )}
                   <label className="review-checkbox">
                     <input
                       type="checkbox"
@@ -1007,7 +1097,9 @@ export default function App() {
                         setMarkerScaleChecked(event.target.checked)
                       }
                     />{" "}
-                    I checked the printed marker with a ruler.
+                    {referenceMode === "printed"
+                      ? "I checked the printed marker with a ruler."
+                      : "I measured both sides of this rigid rectangle."}
                   </label>
                   {holes.slice(1).map((_, index) => (
                     <label key={index}>
@@ -1101,7 +1193,7 @@ export default function App() {
                     <ScanLine size={38} strokeWidth={1.4} />
                     <strong>Waiting for measurements</strong>
                     <span>
-                      Mark four marker corners and at least two holes to
+                      Mark four reference corners and at least two holes to
                       generate a part.
                     </span>
                   </div>
@@ -1251,7 +1343,11 @@ export default function App() {
           isSample={isSample}
           captureId={captureId}
           holeCount={holes.length}
-          markerSideMm={Number(markerMeasuredMm) || null}
+          markerSideMm={
+            referenceMode === "printed"
+              ? Number(markerMeasuredMm) || null
+              : null
+          }
           markerMethod={
             autoMarkerFound
               ? "automatic"
@@ -1265,12 +1361,18 @@ export default function App() {
         />
 
         <FitWorkbench
-          key={image}
+          key={`${image}-${referenceMode}`}
           basePlate={exportReady ? result.plate : null}
           baseSpanMm={quality?.checks[0]?.measuredMm ?? 0}
           markerSizeMm={
             Number(markerMeasuredMm) > 0 ? Number(markerMeasuredMm) : 40
           }
+          referenceHeightMm={
+            referenceMode === "printed"
+              ? Number(markerMeasuredMm) || 40
+              : Number(referenceHeightMm) || 40
+          }
+          referenceMode={referenceMode}
           sample={isSample}
         />
 
@@ -1545,7 +1647,7 @@ export default function App() {
                 varies, so depth is on the roadmap rather than claimed as part
                 of this release.
               </p>
-              <span className="future-label">RESEARCH TRACK / NOT IN V0.4</span>
+              <span className="future-label">RESEARCH TRACK / NOT IN V0.5</span>
             </div>
           </div>
         </section>

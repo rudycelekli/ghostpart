@@ -4,7 +4,7 @@ GhostPart advances by verified repairs, not by a list of generated meshes.
 
 ## Milestone 1: measured flat parts (current)
 
-- Capture and perspective-correct a planar photo with a verified scale marker.
+- Capture and perspective-correct a planar photo with a verified printed square or measured rigid rectangle.
 - Generate a plate from hole locations and explicit parameters.
 - Export editable CAD and printable STL.
 - Require independent scale and hole-spacing checks; reject unstable point placement.
@@ -28,6 +28,7 @@ GhostPart advances by verified repairs, not by a list of generated meshes.
 - Multi-view reconstruction of a mating surface where device APIs permit it.
 - Functional intent prompts and parametric CAD synthesis from constrained templates.
 - Device-specific depth adapters, explicitly tested against reference measurements.
+- A native ARKit/ARCore depth prototype: preserve raw depth, confidence, intrinsics, and synchronized image coordinates; reject low-confidence or non-coplanar points. Benchmark against caliper-measured hole spacing across distance, angle, lighting, and devices before allowing reference-free CAD export.
 - Confidence intervals and a clear “cannot infer” state for hidden geometry.
 
 **Research target:** demonstrate that assisted reconstruction reduces design time and print waste against a manual CAD baseline on held-out repairs.

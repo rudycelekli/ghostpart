@@ -1,5 +1,5 @@
 import {
-  calibrationTransform,
+  calibrationTransformRectangle,
   transformPoint,
   type Point,
   type Quad,
@@ -46,6 +46,7 @@ export function clickSensitivity(
   holes: Point[],
   markerSizeMm: number,
   clickRadiusPx: number,
+  referenceHeightMm = markerSizeMm,
 ): [number, number] {
   if (holes.length < 2) throw new Error("Two holes are required for spacing.");
   if (!Number.isFinite(clickRadiusPx) || clickRadiusPx < 0)
@@ -64,15 +65,19 @@ export function clickSensitivity(
     const shiftedCorners = corners.map(move) as Quad;
     const shiftedHoles = holes.slice(0, 2).map(move);
     try {
-      const h = calibrationTransform(shiftedCorners, markerSizeMm);
+      const h = calibrationTransformRectangle(
+        shiftedCorners,
+        markerSizeMm,
+        referenceHeightMm,
+      );
       const span = measuredHoleSpan(h, shiftedHoles);
       if (Number.isFinite(span)) values.push(span);
     } catch {
-      // A heavily perturbed marker is itself a sign the source photo lacks resolution.
+      // A heavily perturbed reference is itself a sign the photo lacks resolution.
     }
   }
   if (values.length < 64)
-    throw new Error("Marker is too small for stable measurement.");
+    throw new Error("Reference is too small for stable measurement.");
   values.sort((a, b) => a - b);
   return [percentile(values, 0.05), percentile(values, 0.95)];
 }
@@ -81,6 +86,7 @@ export function assessMeasurement(input: {
   corners: Quad;
   holes: Point[];
   markerSizeMm: number;
+  referenceHeightMm?: number;
   markerScaleChecked: boolean;
   independentSpansMm: (number | null)[];
   clickRadiusPx: number;
@@ -89,11 +95,16 @@ export function assessMeasurement(input: {
     corners,
     holes,
     markerSizeMm,
+    referenceHeightMm = markerSizeMm,
     markerScaleChecked,
     independentSpansMm,
     clickRadiusPx,
   } = input;
-  const h = calibrationTransform(corners, markerSizeMm);
+  const h = calibrationTransformRectangle(
+    corners,
+    markerSizeMm,
+    referenceHeightMm,
+  );
   const spanMm = measuredHoleSpan(h, holes);
   const edges = corners.map((point, index) =>
     Math.hypot(
@@ -124,6 +135,7 @@ export function assessMeasurement(input: {
         pair,
         markerSizeMm,
         clickRadiusPx,
+        referenceHeightMm,
       ),
       measuredMm,
       differenceMm:
@@ -151,11 +163,11 @@ export function assessMeasurement(input: {
   const notes: string[] = [];
   if (markerMinEdgePx < 100)
     notes.push(
-      "The marker is small in the source photo. Move closer or use a higher-resolution image.",
+      "The reference is small in the source photo. Move closer or use a higher-resolution image.",
     );
   if (maxReachInMarkerWidths > 3)
     notes.push(
-      "The holes are far from the marker. Move the marker nearer to reduce extrapolation and lens-distortion risk.",
+      "The holes are far from the reference. Move it nearer to reduce extrapolation and lens-distortion risk.",
     );
   if (unstableCheck)
     notes.push(
@@ -163,7 +175,7 @@ export function assessMeasurement(input: {
     );
   if (status === "mismatch")
     notes.push(
-      "Photo spacing disagrees with the independent measurement. Recheck marker scale, plane, and point centers.",
+      "Photo spacing disagrees with the independent measurement. Recheck reference dimensions, plane, and point centers.",
     );
   return {
     spanMm,

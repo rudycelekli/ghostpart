@@ -40,11 +40,15 @@ export function FitWorkbench({
   basePlate,
   baseSpanMm,
   markerSizeMm,
+  referenceHeightMm,
+  referenceMode,
   sample,
 }: {
   basePlate: Plate | null;
   baseSpanMm: number;
   markerSizeMm: number;
+  referenceHeightMm: number;
+  referenceMode: "printed" | "measured";
   sample: boolean;
 }) {
   const [image, setImage] = useState(sample ? fitSampleAsset : "");
@@ -96,6 +100,7 @@ export function FitWorkbench({
       return assessFit({
         marker: marker as Quad,
         markerSizeMm,
+        referenceHeightMm,
         targetHoles,
         printedHoles,
         basePlate,
@@ -118,6 +123,7 @@ export function FitWorkbench({
     baseSpanMm,
     checkedPrintedSpacing,
     markerSizeMm,
+    referenceHeightMm,
     marker,
     targetHoles,
     printedHoles,
@@ -216,10 +222,13 @@ export function FitWorkbench({
   const downloadReceipt = () => {
     if (!assessment || !basePlate) return;
     const receipt = {
-      schema: "ghostpart-fit-receipt/v2",
+      schema: "ghostpart-fit-receipt/v3",
       createdAt: new Date().toISOString(),
       source: sample ? "sample" : "user",
-      markerSideMm: markerSizeMm,
+      markerSideMm: referenceMode === "printed" ? markerSizeMm : null,
+      referenceWidthMm: markerSizeMm,
+      referenceHeightMm,
+      referenceMode,
       baselineCheckedSpacingMm: baseSpanMm,
       printedCheckedSpacingMm: assessment.checkedPrintedSpacingMm,
       targetPhotoSpacingMm: assessment.targetSpacingMm,
@@ -269,9 +278,11 @@ export function FitWorkbench({
                 event.target.value = "";
               }}
             />
-            <button disabled={!image || finding} onClick={findMarker}>
-              <ScanSearch size={17} /> {finding ? "Finding…" : "Find marker"}
-            </button>
+            {referenceMode === "printed" && (
+              <button disabled={!image || finding} onClick={findMarker}>
+                <ScanSearch size={17} /> {finding ? "Finding…" : "Find marker"}
+              </button>
+            )}
             {sample && (
               <button
                 aria-label="Reset sample fit scan"
@@ -303,7 +314,7 @@ export function FitWorkbench({
               >
                 <img
                   src={image}
-                  alt="Fit photo with target mounting holes, printed test holes, and a scale marker"
+                  alt="Fit photo with target mounting holes, printed test holes, and a measured reference"
                   onLoad={(event) =>
                     setNaturalSize({
                       width: event.currentTarget.naturalWidth,
@@ -371,8 +382,9 @@ export function FitWorkbench({
               <Crosshair size={36} />
               <strong>Show the target and the test print together.</strong>
               <span>
-                Place the verified marker nearby and take a sharp, square-on
-                photo.
+                Place the verified{" "}
+                {referenceMode === "printed" ? "marker" : "measured rectangle"}{" "}
+                nearby and take a sharp, square-on photo.
               </span>
             </div>
           )}
@@ -408,7 +420,7 @@ export function FitWorkbench({
                 setStep("marker");
               }}
             >
-              1 · Marker corners
+              1 · Reference corners
             </button>
             <button
               className={step === "target" ? "active" : ""}
@@ -437,7 +449,7 @@ export function FitWorkbench({
           </div>
           <p className="fit-help">
             {step === "marker"
-              ? `Tap the black square corners clockwise, starting top left (${marker.length}/4).`
+              ? `Tap the ${referenceMode === "printed" ? "black square" : "measured rectangle"} corners clockwise, starting top left (${marker.length}/4).`
               : step === "target"
                 ? `Tap both target mounting-hole centers in order (${targetHoles.length}/2).`
                 : step === "printed"
