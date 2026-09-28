@@ -47,6 +47,65 @@ export function stlFromPlate(plate: Plate): string {
   return stl;
 }
 
+/** Three physical hole choices let a printer and fastener settle the clearance. */
+export function fitCouponDiameters(holeDiameter: number): number[] {
+  if (!Number.isFinite(holeDiameter) || holeDiameter < 2 || holeDiameter > 20)
+    throw new Error("Choose a hole diameter between 2 and 20 mm.");
+  return [-0.2, 0, 0.2].map((offset) =>
+    Number((holeDiameter + offset).toFixed(3)),
+  );
+}
+
+export function fitCouponGeometry(holeDiameter: number): THREE.ExtrudeGeometry {
+  const diameters = fitCouponDiameters(holeDiameter);
+  const pitch = Math.max(16, diameters[2] + 6);
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(pitch * 3, 0);
+  shape.lineTo(pitch * 3, pitch);
+  shape.lineTo(0, pitch);
+  shape.closePath();
+  diameters.forEach((diameter, index) => {
+    const hole = new THREE.Path();
+    hole.absarc(
+      pitch * (index + 0.5),
+      pitch / 2,
+      diameter / 2,
+      0,
+      Math.PI * 2,
+      true,
+    );
+    shape.holes.push(hole);
+  });
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: 3,
+    bevelEnabled: false,
+    curveSegments: 48,
+    steps: 1,
+  });
+}
+
+export function stlFromFitCoupon(holeDiameter: number): string {
+  const geometry = fitCouponGeometry(holeDiameter);
+  const stl = new STLExporter().parse(new THREE.Mesh(geometry), {
+    binary: false,
+  }) as string;
+  geometry.dispose();
+  return stl;
+}
+
+export function openScadFromFitCoupon(holeDiameter: number): string {
+  const diameters = fitCouponDiameters(holeDiameter);
+  const pitch = Number(Math.max(16, diameters[2] + 6).toFixed(3));
+  const holes = diameters
+    .map(
+      (diameter, index) =>
+        `  translate([${Number((pitch * (index + 0.5)).toFixed(3))}, ${pitch / 2}, -0.1]) cylinder(h=3.2, d=${diameter}, $fn=64);`,
+    )
+    .join("\n");
+  return `// GhostPart hole clearance coupon, millimetres.\n// Left to right hole diameters: ${diameters.join(", ")} mm.\ndifference() {\n  cube([${Number((pitch * 3).toFixed(3))}, ${pitch}, 3]);\n${holes}\n}\n`;
+}
+
 export function openScadFromPlate(plate: Plate): string {
   validatePlate(plate);
   const n = (value: number) => Number(value.toFixed(3));

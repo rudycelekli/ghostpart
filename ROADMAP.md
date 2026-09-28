@@ -7,13 +7,15 @@ GhostPart advances by verified repairs, not by a list of generated meshes.
 - Capture and perspective-correct a planar photo with a verified scale marker.
 - Generate a plate from hole locations and explicit parameters.
 - Export editable CAD and printable STL.
+- Require independent scale and hole-spacing checks; reject unstable point placement.
+- Offer opt-in local AI advice that cannot change measurements or CAD.
 - Publish 10 independent repair trials with measured fit results.
 
 **Release gate:** dimensions in exported files match input measurements; no claims about 3D reconstruction or strength.
 
 ## Milestone 2: fit loop
 
-- Add printable calibration coupons and screw-clearance choices.
+- Gather real printer feedback for the new three-size screw-clearance coupon and add more material-specific fit guidance.
 - Record actual first-print and second-print fit, including failures.
 - Produce a shareable repair receipt: source image, dimensions, design revision, material, and outcome.
 - Support simple knobs, spacers, and brackets using parametric families.

@@ -2,7 +2,7 @@
 
 **Make what is missing.** GhostPart is an open-source, local-first repair workbench. Its first release measures flat mounting points from a phone photo and generates a printable, editable replacement plate.
 
-> **Status: experimental v0.1.** This is a working planar repair tool, not an automatic reconstruction system for arbitrary broken objects. Measure the generated dimensions independently before fabrication.
+> **Status: experimental v0.2.** This is a working planar repair tool, not an automatic reconstruction system for arbitrary broken objects. Real-world fit and strength are unverified.
 
 ## Try it
 
@@ -21,23 +21,31 @@ Open the local URL printed by Vite. The sample project is loaded by default. Rot
 2. Put the marker on the **same flat plane** as the mounting holes. Take a sharp photo as square-on as practical. The camera, motion, and orientation controls work best in a secure browser context (HTTPS or localhost).
 3. Add the photo. Click the marker's **outer** corners clockwise, starting at the top left.
 4. Click the center of at least two mounting holes, then choose **Build this part**.
-5. Set edge margin, thickness, hole diameter, and corner radius. Verify dimensions with a ruler or calipers.
-6. Export STL for a slicer or OpenSCAD for editable CAD. Check print orientation, material, screw clearance, and fit on the real object.
+5. Enter the marker side length **as measured on the print** and check the box. Measure each hole center spacing independently with calipers or a ruler and enter it in Measurement review. Zoom in and re-mark points if the app reports unstable placement. A later zoom does not improve points already marked.
+6. Set edge margin, thickness, hole diameter, and corner radius. Print the optional clearance coupon (three holes at target diameter ±0.2 mm) and test it with the actual screw. Then select the working hole diameter for the full plate.
+7. Export STL for a slicer or OpenSCAD for editable CAD. Check print orientation, material, screw clearance, and fit on the real object.
 
 ### What works today
 
 - Perspective-corrected planar measurements from a manually marked 40 mm reference square.
+- A measurement review that compares the photo with independently entered marker and hole-spacing measurements, simulates point-placement sensitivity, and blocks exports when the capture is unstable or the checks disagree.
 - Browser camera capture or image upload, with all processing on the device.
+- Optional local repair reasoning with [Ollama](https://ollama.com/). The model receives a measurement ledger and your description; a photo is included only if you opt in and the selected local model supports vision. Model advice is separate from CAD and cannot change the dimensions.
 - Optional phone accelerometer and orientation readout for steadier capture.
 - Flat, rounded mounting plates with multiple holes, plus STL and editable OpenSCAD export.
+- A three-size printable screw clearance coupon, also available as STL and editable OpenSCAD.
 - Optional microphone tap comparison before and after a repair. It reports the strongest frequency of the loudest captured moment; it is **not** a strength or safety assessment.
 - A working sample project and a printable calibration marker.
 
 ### Boundaries
 
-The marker and measured holes must be coplanar. Lens distortion, a bent marker, imprecise clicks, or a marker printed at the wrong scale can spoil fit. The current generator only makes simple flat plates. It does not infer hidden geometry, load capacity, material strength, tolerances, or whether a repair is safe. Do not use it for structural, electrical, medical, vehicle, or other safety-critical parts.
+The marker and measured holes must be coplanar. Lens distortion, a bent marker, imprecise clicks, or a marker printed at the wrong scale can spoil fit. The point-placement range is a reproducible sensitivity simulation, **not** a statistical confidence interval or a complete error bound. The independent check is limited by your ruler or caliper technique. The current generator only makes simple flat plates. Neither code nor AI infers hidden geometry, load capacity, material strength, printer tolerance, or whether a repair is safe. Do not use it for structural, electrical, medical, vehicle, or other safety-critical parts.
 
-Phone depth APIs vary by device and browser. Native depth and 3D reconstruction are research tracks, not v0.1 features.
+### Optional local AI
+
+Install [Ollama](https://ollama.com/) separately and start a model on the same device. Click **Connect Ollama on this device**, choose a model, describe the repair, and click **Analyze this repair** after measurements are cross-checked. The app uses Ollama's [chat API](https://docs.ollama.com/api/chat) with structured JSON output. A [vision-capable model](https://docs.ollama.com/capabilities/vision) can also receive the photo when you explicitly select that option. The app connects only to `127.0.0.1:11434`; it has no cloud fallback. AI output is unverified advice, never measurement authority.
+
+Phone depth APIs vary by device and browser. Native depth and 3D reconstruction are research tracks, not v0.2 features.
 
 ## Why this exists
 
@@ -53,7 +61,7 @@ npm run build
 npm audit
 ```
 
-The code is TypeScript, React, Three.js, and Vite. `src/lib/measure.ts` contains the planar homography and dimensions. `src/lib/cad.ts` builds the 3D mesh and editable source. The app has no server component.
+The code is TypeScript, React, Three.js, and Vite. `src/lib/measure.ts` contains the planar homography and dimensions. `src/lib/quality.ts` handles measurement review and sensitivity checks. `src/lib/cad.ts` builds the 3D mesh and editable source. `src/lib/localAi.ts` isolates the optional Ollama connection. The app has no server component.
 
 ## Contribute
 

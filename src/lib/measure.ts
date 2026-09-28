@@ -5,6 +5,21 @@ export type Quad = [Point, Point, Point, Point];
 export function calibrationTransform(corners: Quad, sizeMm: number): number[] {
   if (!Number.isFinite(sizeMm) || sizeMm <= 0)
     throw new Error("Marker size must be positive.");
+  if (!corners.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)))
+    throw new Error("Marker corners must be finite points.");
+  const turns = corners.map((point, index) => {
+    const next = corners[(index + 1) % 4];
+    const after = corners[(index + 2) % 4];
+    return (
+      (next.x - point.x) * (after.y - next.y) -
+      (next.y - point.y) * (after.x - next.x)
+    );
+  });
+  if (
+    turns.some((turn) => Math.abs(turn) < 1e-6) ||
+    turns.some((turn) => Math.sign(turn) !== Math.sign(turns[0]))
+  )
+    throw new Error("Marker corners must trace a convex square in order.");
   const target: Quad = [
     { x: 0, y: 0 },
     { x: sizeMm, y: 0 },

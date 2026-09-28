@@ -10,17 +10,36 @@ import {
   MousePointer2,
   RotateCcw,
   ScanLine,
+  ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Volume2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { PartPreview } from "./components/PartPreview";
-import { downloadFile, openScadFromPlate, stlFromPlate } from "./lib/cad";
+import {
+  downloadFile,
+  fitCouponDiameters,
+  openScadFromFitCoupon,
+  openScadFromPlate,
+  stlFromFitCoupon,
+  stlFromPlate,
+} from "./lib/cad";
 import {
   calibrationTransform,
   plateFromImagePoints,
   type Point,
   type Quad,
 } from "./lib/measure";
+import { assessMeasurement } from "./lib/quality";
+import {
+  imageToLocalJpeg,
+  listLocalModels,
+  requestRepairAdvice,
+  type LocalModel,
+  type RepairAdvice,
+} from "./lib/localAi";
 import {
   recordTapSignature,
   requestSensorPermission,
@@ -35,10 +54,10 @@ type Options = {
   cornerRadius: number;
 };
 const sampleCorners: Quad = [
-  { x: 92, y: 548 },
-  { x: 252, y: 548 },
-  { x: 252, y: 708 },
-  { x: 92, y: 708 },
+  { x: 573, y: 355 },
+  { x: 733, y: 355 },
+  { x: 733, y: 515 },
+  { x: 573, y: 515 },
 ];
 const sampleHoles: Point[] = [
   { x: 533, y: 291 },
@@ -68,6 +87,12 @@ export default function App() {
   const [holes, setHoles] = useState<Point[]>(sampleHoles);
   const [mode, setMode] = useState<Mode>("preview");
   const [options, setOptions] = useState<Options>(initialOptions);
+  const [zoom, setZoom] = useState(1);
+  const [cornerClickRadiusPx, setCornerClickRadiusPx] = useState(0.1);
+  const [holeClickRadiusPx, setHoleClickRadiusPx] = useState(0.1);
+  const [markerMeasuredMm, setMarkerMeasuredMm] = useState("40");
+  const [markerScaleChecked, setMarkerScaleChecked] = useState(true);
+  const [spanChecksMm, setSpanChecksMm] = useState<string[]>(["60"]);
   const [cameraOn, setCameraOn] = useState(false);
   const [sensorState, setSensorState] = useState({
     active: false,
@@ -80,6 +105,17 @@ export default function App() {
   const [tapAfter, setTapAfter] = useState<TapSignature | null>(null);
   const [tapBusy, setTapBusy] = useState<"before" | "after" | null>(null);
   const [tapError, setTapError] = useState("");
+  const [repairGoal, setRepairGoal] = useState(
+    "Replace a broken support tab between these mounting holes.",
+  );
+  const [aiModels, setAiModels] = useState<LocalModel[]>([]);
+  const [aiModel, setAiModel] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiAdvice, setAiAdvice] = useState<RepairAdvice | null>(null);
+  const [aiUsedImage, setAiUsedImage] = useState(false);
+  const [sendPhotoToLocalAi, setSendPhotoToLocalAi] = useState(false);
+  const aiRequestId = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraStream = useRef<MediaStream | null>(null);
@@ -96,11 +132,41 @@ export default function App() {
   const calibration = useMemo(() => {
     if (corners.length !== 4) return null;
     try {
-      return calibrationTransform(corners as Quad, 40);
+      const size = Number(markerMeasuredMm);
+      return calibrationTransform(corners as Quad, size > 0 ? size : 40);
     } catch {
       return null;
     }
-  }, [corners]);
+  }, [corners, markerMeasuredMm]);
+
+  const quality = useMemo(() => {
+    if (!calibration || corners.length !== 4 || holes.length < 2) return null;
+    try {
+      return assessMeasurement({
+        corners: corners as Quad,
+        holes,
+        markerSizeMm:
+          Number(markerMeasuredMm) > 0 ? Number(markerMeasuredMm) : 40,
+        markerScaleChecked: markerScaleChecked && Number(markerMeasuredMm) > 0,
+        independentSpansMm: holes.slice(1).map((_, index) => {
+          const value = Number(spanChecksMm[index]);
+          return value > 0 ? value : null;
+        }),
+        clickRadiusPx: Math.max(cornerClickRadiusPx, holeClickRadiusPx),
+      });
+    } catch {
+      return null;
+    }
+  }, [
+    calibration,
+    corners,
+    holes,
+    markerMeasuredMm,
+    markerScaleChecked,
+    spanChecksMm,
+    cornerClickRadiusPx,
+    holeClickRadiusPx,
+  ]);
 
   const result = useMemo(() => {
     if (!calibration || holes.length < 2) return { plate: null, error: "" };
@@ -118,12 +184,38 @@ export default function App() {
     }
   }, [calibration, holes, options]);
 
+  const couponDiameters = useMemo(() => {
+    try {
+      return fitCouponDiameters(options.holeDiameter);
+    } catch {
+      return null;
+    }
+  }, [options.holeDiameter]);
+
+  const exportReady = !!result.plate && quality?.status === "cross-checked";
+
+  useEffect(() => {
+    aiRequestId.current += 1;
+    setAiAdvice(null);
+  }, [result.plate, quality, repairGoal, image]);
+
   const loadImage = (url: string, sample = false) => {
     setImage(url);
     setIsSample(sample);
     setCorners(sample ? sampleCorners : []);
     setHoles(sample ? sampleHoles : []);
     setMode(sample ? "preview" : "marker");
+    setZoom(1);
+    setCornerClickRadiusPx(sample ? 0.1 : 0);
+    setHoleClickRadiusPx(sample ? 0.1 : 0);
+    setMarkerMeasuredMm(sample ? "40" : "");
+    setMarkerScaleChecked(sample);
+    setSpanChecksMm(sample ? ["60"] : []);
+    setRepairGoal(
+      sample
+        ? "Replace a broken support tab between these mounting holes."
+        : "",
+    );
     setCaptureError("");
   };
 
@@ -221,11 +313,16 @@ export default function App() {
       ((event.clientY - bounds.top) / bounds.height) * naturalSize.height;
     if (x < 0 || y < 0 || x > naturalSize.width || y > naturalSize.height)
       return;
+    const clickRadiusPx = (2 * naturalSize.width) / bounds.width;
     if (mode === "marker") {
+      setCornerClickRadiusPx((previous) => Math.max(previous, clickRadiusPx));
       const next = [...corners, { x, y }];
       setCorners(next);
       if (next.length === 4) setMode("holes");
-    } else setHoles((previous) => [...previous, { x, y }]);
+    } else {
+      setHoleClickRadiusPx((previous) => Math.max(previous, clickRadiusPx));
+      setHoles((previous) => [...previous, { x, y }]);
+    }
   };
 
   const changeOption = (key: keyof Options, value: number) => {
@@ -251,6 +348,58 @@ export default function App() {
     }
   };
 
+  const connectLocalAi = async () => {
+    setAiError("");
+    setAiBusy(true);
+    try {
+      const models = await listLocalModels();
+      if (!models.length)
+        throw new Error("Ollama is running but has no downloaded models.");
+      setAiModels(models);
+      setAiModel(models[0].name);
+    } catch (error) {
+      setAiError(
+        error instanceof Error
+          ? error.message
+          : "Could not connect to local AI.",
+      );
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const runLocalAi = async () => {
+    if (!result.plate || !quality) return;
+    const requestId = ++aiRequestId.current;
+    setAiError("");
+    setAiBusy(true);
+    try {
+      const imageBase64 = sendPhotoToLocalAi
+        ? await imageToLocalJpeg(image)
+        : undefined;
+      const response = await requestRepairAdvice({
+        model: aiModel,
+        goal: repairGoal,
+        plate: result.plate,
+        quality,
+        imageBase64,
+      });
+      if (requestId === aiRequestId.current) {
+        setAiAdvice(response.advice);
+        setAiUsedImage(response.usedImage);
+      }
+    } catch (error) {
+      if (requestId === aiRequestId.current)
+        setAiError(
+          error instanceof Error
+            ? error.message
+            : "Local AI could not analyze this repair.",
+        );
+    } finally {
+      if (requestId === aiRequestId.current) setAiBusy(false);
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -264,6 +413,7 @@ export default function App() {
         </a>
         <nav className="header-nav" aria-label="Main navigation">
           <a href="#workbench">Workbench</a>
+          <a href="#intelligence">Intelligence</a>
           <a href="#how">How it works</a>
           <a
             href="https://github.com/rudycelekli/ghostpart"
@@ -274,7 +424,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.1
+          <span /> OPEN SOURCE / V0.2
         </span>
       </header>
 
@@ -388,12 +538,15 @@ export default function App() {
               )}
               <div
                 className={`photo-stage ${mode !== "preview" ? "is-marking" : ""}`}
-                onClick={onPhotoClick}
               >
                 {cameraOn ? (
                   <video ref={videoRef} autoPlay playsInline muted />
                 ) : (
-                  <>
+                  <div
+                    className="photo-image"
+                    style={{ width: `${zoom * 100}%` }}
+                    onClick={onPhotoClick}
+                  >
                     <img
                       src={image}
                       alt={
@@ -462,7 +615,7 @@ export default function App() {
                         </g>
                       ))}
                     </svg>
-                  </>
+                  </div>
                 )}
                 <span className="photo-badge">
                   {cameraOn
@@ -472,12 +625,33 @@ export default function App() {
                       : "YOUR CAPTURE"}
                 </span>
               </div>
+              <div className="photo-zoom">
+                <span>Zoom for precise points</span>
+                <button
+                  aria-label="Zoom out"
+                  disabled={zoom <= 1}
+                  onClick={() => setZoom((value) => Math.max(1, value - 0.5))}
+                >
+                  <ZoomOut size={17} />
+                </button>
+                <strong>{zoom.toFixed(1)}×</strong>
+                <button
+                  aria-label="Zoom in"
+                  disabled={zoom >= 4}
+                  onClick={() => setZoom((value) => Math.min(4, value + 0.5))}
+                >
+                  <ZoomIn size={17} />
+                </button>
+              </div>
               <div className="measurement-steps">
                 <button
                   className={mode === "marker" ? "active" : ""}
                   onClick={() => {
                     setCorners([]);
                     setHoles([]);
+                    setSpanChecksMm([]);
+                    setCornerClickRadiusPx(0);
+                    setHoleClickRadiusPx(0);
                     setMode("marker");
                   }}
                 >
@@ -488,6 +662,8 @@ export default function App() {
                   disabled={corners.length !== 4}
                   onClick={() => {
                     setHoles([]);
+                    setSpanChecksMm([]);
+                    setHoleClickRadiusPx(0);
                     setMode("holes");
                   }}
                 >
@@ -509,6 +685,119 @@ export default function App() {
                     ? `Tap the center of each mounting hole (${holes.length} marked). Add at least two, then build.`
                     : "Tap a step to remeasure. The marker and holes must share a flat plane."}
               </p>
+              <div className="measurement-review">
+                <div className="review-heading">
+                  <div>
+                    <ShieldCheck size={18} />
+                    <strong>Measurement review</strong>
+                  </div>
+                  <span
+                    className={`review-status ${quality?.status ?? "waiting"}`}
+                  >
+                    {isSample
+                      ? "SAMPLE ONLY"
+                      : quality?.status === "cross-checked"
+                        ? "CROSS-CHECKED"
+                        : quality?.status === "mismatch"
+                          ? "MISMATCH"
+                          : quality?.status === "needs-recapture"
+                            ? "REMARK PHOTO"
+                            : "NEEDS CHECK"}
+                  </span>
+                </div>
+                <p>
+                  Measure the printed marker and each hole spacing
+                  independently. Export unlocks when they agree.
+                </p>
+                <div className="review-inputs">
+                  <label>
+                    Printed marker side{" "}
+                    <div>
+                      <input
+                        type="number"
+                        min="1"
+                        step="0.1"
+                        value={markerMeasuredMm}
+                        onChange={(event) => {
+                          setMarkerMeasuredMm(event.target.value);
+                          setMarkerScaleChecked(false);
+                        }}
+                        placeholder="40.0"
+                      />
+                      <span>mm</span>
+                    </div>
+                  </label>
+                  <label className="review-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={markerScaleChecked}
+                      onChange={(event) =>
+                        setMarkerScaleChecked(event.target.checked)
+                      }
+                    />{" "}
+                    I checked the printed marker with a ruler.
+                  </label>
+                  {holes.slice(1).map((_, index) => (
+                    <label key={index}>
+                      H1 → H{index + 2} center spacing{" "}
+                      <div>
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={spanChecksMm[index] ?? ""}
+                          onChange={(event) =>
+                            setSpanChecksMm((previous) => {
+                              const next = [...previous];
+                              next[index] = event.target.value;
+                              return next;
+                            })
+                          }
+                          placeholder="Measured"
+                        />
+                        <span>mm</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {quality && (
+                  <div className="review-results">
+                    <span>
+                      Photo span H1 → H2{" "}
+                      <strong>{formatMm(quality.spanMm)}</strong>
+                    </span>
+                    <span>
+                      Simulated click range (5–95%){" "}
+                      <strong>
+                        {formatMm(quality.clickIntervalMm[0])}–
+                        {formatMm(quality.clickIntervalMm[1])}
+                      </strong>
+                    </span>
+                    {quality.checks.map((check, index) => (
+                      <span key={index}>
+                        H1 → H{index + 2} difference{" "}
+                        <strong>
+                          {check.differenceMm == null
+                            ? "awaiting check"
+                            : formatMm(check.differenceMm)}
+                        </strong>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {quality?.notes.map((note, index) => (
+                  <p className="review-note" key={index}>
+                    {note}
+                  </p>
+                ))}
+                {quality && (
+                  <small>
+                    This is a sensitivity simulation, not a calibrated
+                    confidence interval. It excludes lens distortion, wrong
+                    scale, and non-planar surfaces.
+                  </small>
+                )}
+              </div>
               {mode === "holes" && holes.length >= 2 && (
                 <button
                   className="finish-button"
@@ -606,7 +895,7 @@ export default function App() {
               <div className="download-row">
                 <button
                   className="download-primary"
-                  disabled={!result.plate}
+                  disabled={!exportReady}
                   onClick={() => {
                     if (result.plate)
                       downloadFile(
@@ -620,7 +909,7 @@ export default function App() {
                 </button>
                 <button
                   className="download-secondary"
-                  disabled={!result.plate}
+                  disabled={!exportReady}
                   onClick={() => {
                     if (result.plate)
                       downloadFile(
@@ -633,11 +922,195 @@ export default function App() {
                   Editable OpenSCAD
                 </button>
               </div>
+              <div className="coupon-row">
+                <div>
+                  <strong>Test screw clearance first</strong>
+                  <span>
+                    {couponDiameters
+                      ? `Print a 3 mm coupon with ${couponDiameters.map((diameter) => diameter.toFixed(1)).join(" / ")} mm holes. Choose the fit that works on your printer.`
+                      : "Set a hole diameter from 2 to 20 mm to make a test coupon."}
+                  </span>
+                </div>
+                <button
+                  disabled={!couponDiameters}
+                  onClick={() =>
+                    downloadFile(
+                      "ghostpart-fit-coupon.stl",
+                      stlFromFitCoupon(options.holeDiameter),
+                      "model/stl",
+                    )
+                  }
+                >
+                  Coupon STL
+                </button>
+                <button
+                  disabled={!couponDiameters}
+                  onClick={() =>
+                    downloadFile(
+                      "ghostpart-fit-coupon.scad",
+                      openScadFromFitCoupon(options.holeDiameter),
+                      "text/plain",
+                    )
+                  }
+                >
+                  Coupon SCAD
+                </button>
+              </div>
               <p className="fit-note">
-                <CircleHelp size={15} /> Check hole spacing with a ruler or
-                calipers before printing. This early version makes flat plates
-                only.
+                <CircleHelp size={15} />{" "}
+                {isSample
+                  ? "Sample exports are for testing."
+                  : exportReady
+                    ? "Measurements are cross-checked. Fit and strength remain unverified until a real test print."
+                    : "Exports unlock after scale and every hole spacing are independently checked and the capture passes point-placement review."}{" "}
+                This version makes flat plates only.
               </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="ai-section" id="intelligence">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">02 / REPAIR INTELLIGENCE</div>
+              <h2>Reason from evidence.</h2>
+            </div>
+            <p>
+              A local model can propose failure hypotheses and useful checks. It
+              cannot alter dimensions or certify a print.
+            </p>
+          </div>
+          <div className="ai-workspace">
+            <div className="ai-inputs">
+              <div className="ai-emblem">
+                <Sparkles size={25} />
+                <span>LOCAL AI / OPT IN</span>
+              </div>
+              <label htmlFor="repair-goal">
+                What broke, and what should the replacement do?
+              </label>
+              <textarea
+                id="repair-goal"
+                value={repairGoal}
+                onChange={(event) => setRepairGoal(event.target.value)}
+                rows={4}
+                placeholder="Describe the object, the failed part, and how it attaches."
+              />
+              <div className="ai-connect-row">
+                {aiModels.length ? (
+                  <select
+                    aria-label="Local model"
+                    value={aiModel}
+                    onChange={(event) => setAiModel(event.target.value)}
+                  >
+                    {aiModels.map((model) => (
+                      <option key={model.name} value={model.name}>
+                        {model.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <button onClick={connectLocalAi} disabled={aiBusy}>
+                    {aiBusy ? "Connecting…" : "Connect Ollama on this device"}
+                  </button>
+                )}
+                <span>
+                  {aiModels.length
+                    ? `${aiModels.length} local model${aiModels.length === 1 ? "" : "s"} found`
+                    : "No account or cloud key"}
+                </span>
+              </div>
+              <label className="ai-photo-choice">
+                <input
+                  type="checkbox"
+                  checked={sendPhotoToLocalAi}
+                  onChange={(event) =>
+                    setSendPhotoToLocalAi(event.target.checked)
+                  }
+                />{" "}
+                Share the current photo with the local model if it supports
+                vision.
+              </label>
+              <button
+                className="ai-run"
+                disabled={
+                  !quality ||
+                  quality.status !== "cross-checked" ||
+                  !result.plate ||
+                  !aiModel ||
+                  !repairGoal.trim() ||
+                  aiBusy
+                }
+                onClick={runLocalAi}
+              >
+                <Sparkles size={18} />{" "}
+                {aiBusy && aiModels.length
+                  ? "Reasoning…"
+                  : "Analyze this repair"}
+              </button>
+              <p className="ai-privacy">
+                Connects only to Ollama at 127.0.0.1:11434. The photo is sent
+                only if you opt in and the selected model supports vision. The
+                AI result never changes CAD.
+              </p>
+              {aiError && (
+                <p className="inline-error" role="alert">
+                  {aiError}
+                </p>
+              )}
+            </div>
+            <div className="ai-output">
+              {aiAdvice ? (
+                <>
+                  <div className="ai-output-header">
+                    <span>MODEL ADVICE / UNVERIFIED</span>
+                    <strong>
+                      {aiUsedImage
+                        ? "PHOTO + MEASUREMENTS"
+                        : "MEASUREMENTS + DESCRIPTION"}
+                    </strong>
+                  </div>
+                  <h3>{aiAdvice.purpose}</h3>
+                  {(
+                    [
+                      [
+                        "Measured evidence & proposed CAD",
+                        aiAdvice.observations,
+                      ],
+                      ["Possible failure modes", aiAdvice.hypotheses],
+                      ["Next physical checks", aiAdvice.checks],
+                      ["What remains unknown", aiAdvice.unknowns],
+                    ] as const
+                  ).map(([title, items]) => (
+                    <div className="ai-advice-group" key={title}>
+                      <h4>{title}</h4>
+                      <ul>
+                        {items.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  <p className="ai-disclaimer">
+                    Model output is a hypothesis. Verify fit and real-world
+                    behavior on the object.
+                  </p>
+                </>
+              ) : (
+                <div className="ai-empty">
+                  <div className="ai-orbit">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <strong>Intelligence with boundaries.</strong>
+                  <p>
+                    First, measure and cross-check the mounting geometry. Then
+                    ask a local model to critique the repair plan. Dimensions
+                    come from the photo and your independent measurement.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -645,7 +1118,7 @@ export default function App() {
         <section className="sensor-section" id="how">
           <div className="section-heading sensor-heading">
             <div>
-              <div className="eyebrow">02 / YOUR PHONE IS A WORKSHOP</div>
+              <div className="eyebrow">03 / YOUR PHONE IS A WORKSHOP</div>
               <h2>Use the sensors you already own.</h2>
             </div>
             <p>
@@ -767,7 +1240,7 @@ export default function App() {
                 varies, so depth is on the roadmap rather than claimed as part
                 of this release.
               </p>
-              <span className="future-label">RESEARCH TRACK / NOT IN V0.1</span>
+              <span className="future-label">RESEARCH TRACK / NOT IN V0.2</span>
             </div>
           </div>
         </section>

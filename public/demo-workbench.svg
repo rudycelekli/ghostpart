@@ -13,10 +13,10 @@
   <path d="M568 249l48 -34 19 43 -31 40 54 -5 33 -38 45 7" fill="none" stroke="#303c3b" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>
   <path d="M569 250l35 -22 12 32 -24 29" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M706 262l34 7" fill="none" stroke="#89918b" stroke-width="16" stroke-linecap="round"/>
-  <rect x="92" y="548" width="160" height="160" fill="#f7f5ef" stroke="#171f20" stroke-width="5" filter="url(#shadow)"/>
-  <rect x="104" y="560" width="136" height="136" fill="none" stroke="#171f20" stroke-width="2"/>
-  <path d="M112 568h27v27M233 568h-27v27M112 688h27v-27M233 688h-27v-27" stroke="#171f20" stroke-width="5" fill="none"/>
-  <text x="172" y="629" font-family="Arial,sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#171f20">40 mm</text>
-  <text x="172" y="649" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" text-anchor="middle" fill="#171f20">GHOSTPART</text>
+  <rect x="573" y="355" width="160" height="160" fill="#f7f5ef" stroke="#171f20" stroke-width="5" filter="url(#shadow)"/>
+  <rect x="585" y="367" width="136" height="136" fill="none" stroke="#171f20" stroke-width="2"/>
+  <path d="M593 375h27v27M714 375h-27v27M593 495h27v-27M714 495h-27v-27" stroke="#171f20" stroke-width="5" fill="none"/>
+  <text x="653" y="436" font-family="Arial,sans-serif" font-size="17" font-weight="bold" text-anchor="middle" fill="#171f20">40 mm</text>
+  <text x="653" y="456" font-family="Arial,sans-serif" font-size="10" letter-spacing="2" text-anchor="middle" fill="#171f20">GHOSTPART</text>
   <text x="949" y="681" font-family="Arial,sans-serif" font-size="12" letter-spacing="2" fill="#4e3e31">SAMPLE CAPTURE  /  01</text>
 </svg>

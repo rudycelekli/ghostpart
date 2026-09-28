@@ -6,7 +6,15 @@ import {
   validatePlate,
   type Quad,
 } from "../src/lib/measure";
-import { openScadFromPlate, plateGeometry, stlFromPlate } from "../src/lib/cad";
+import {
+  fitCouponDiameters,
+  fitCouponGeometry,
+  openScadFromFitCoupon,
+  openScadFromPlate,
+  plateGeometry,
+  stlFromFitCoupon,
+  stlFromPlate,
+} from "../src/lib/cad";
 
 const marker: Quad = [
   { x: 100, y: 100 },
@@ -106,5 +114,17 @@ describe("repair plate", () => {
         ],
       }),
     ).toThrow(/overlap/);
+  });
+
+  it("exports a physical three-size fastener clearance coupon", () => {
+    expect(fitCouponDiameters(5)).toEqual([4.8, 5, 5.2]);
+    const geometry = fitCouponGeometry(5);
+    const shape = Array.isArray(geometry.parameters.shapes)
+      ? geometry.parameters.shapes[0]
+      : geometry.parameters.shapes;
+    expect(shape.holes).toHaveLength(3);
+    geometry.dispose();
+    expect(openScadFromFitCoupon(5)).toContain("4.8, 5, 5.2");
+    expect(stlFromFitCoupon(5)).toContain("facet normal");
   });
 });
