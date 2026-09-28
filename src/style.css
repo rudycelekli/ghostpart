@@ -1830,6 +1830,66 @@ footer a:hover {
 .sensor-block button:hover {
   background: #3d4940;
 }
+.sensor-block button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.depth-note {
+  margin-top: 12px;
+}
+.depth-overlay {
+  display: none;
+}
+.depth-overlay.active {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(18px, env(safe-area-inset-top)) 18px 18px;
+  pointer-events: none;
+  color: #fff;
+}
+.depth-overlay-panel {
+  width: min(390px, 100%);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: #1d2b25e6;
+  border: 1px solid #ffffff5c;
+  border-radius: 12px;
+  pointer-events: auto;
+}
+.depth-overlay-panel strong {
+  font-size: 31px;
+  line-height: 1;
+}
+.depth-overlay-panel small {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #c5d4c9;
+}
+.depth-overlay-panel button {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 7px 11px;
+  border: 1px solid #b9c8bc;
+  background: transparent;
+  color: #fff;
+}
+.depth-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #1d2b25;
+}
 .sensor-readout {
   border-top: 1px solid #566057;
   margin-top: 18px;

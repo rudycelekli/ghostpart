@@ -28,6 +28,7 @@ GhostPart advances by verified repairs, not by a list of generated meshes.
 - Multi-view reconstruction of a mating surface where device APIs permit it.
 - Functional intent prompts and parametric CAD synthesis from constrained templates.
 - Device-specific depth adapters, explicitly tested against reference measurements.
+- Use the experimental WebXR depth preview to collect on-device compatibility and repeatability observations; it does not authorize CAD dimensions.
 - A native ARKit/ARCore depth prototype: preserve raw depth, confidence, intrinsics, and synchronized image coordinates; reject low-confidence or non-coplanar points. Benchmark against caliper-measured hole spacing across distance, angle, lighting, and devices before allowing reference-free CAD export.
 - Confidence intervals and a clear “cannot infer” state for hidden geometry.
 

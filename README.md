@@ -2,7 +2,7 @@
 
 **Make what is missing.** GhostPart is an open-source, local-first repair workbench. Its first release measures flat mounting points from a phone photo and generates a printable, editable replacement plate.
 
-> **Status: experimental v0.5.0.** This is a working planar repair tool with printed and paperless reference modes, a guided printed-card accuracy check, and an early fit revision loop. Real-world fit and strength are unverified.
+> **Status: experimental v0.6.0.** This is a working planar repair tool with printed and paperless reference modes, a guided printed-card accuracy check, an early fit revision loop, and an experimental WebXR depth preview. Real-world fit and strength are unverified.
 
 **[Try GhostPart in your browser →](https://rudycelekli.github.io/ghostpart/)** Public HTTPS app. Works on phones; no account or install required.
 
@@ -24,6 +24,10 @@ For the printed-marker workflow, first print the [accuracy check card](public/ac
 Select **No printer · measured rectangle**. Place a rigid, flat rectangular object with four clear corners next to the holes on the _same plane_. Measure its actual width and height with a ruler or calipers; do not rely on a nominal product size. Add a photo, mark its corners clockwise from top left, then mark at least two hole centers. Width is edge 1→2 and height is edge 2→3. Enter both reference dimensions and independently measure every hole spacing. Exports remain locked until the measurements agree and point placement is stable. For the fit loop, use the same measured rectangle again beside both target and printed holes.
 
 This removes the printed card, **not** the need for a physical scale measurement. The five-photo Accuracy check currently requires its own printed card and does not certify the paperless reference. A rigid rectangle can have rounded or obscured corners, thickness, or placement on another plane; reject those captures. If you cannot measure two sides and a hole spacing independently, do not treat the generated dimensions as verified.
+
+### Try phone depth
+
+On a compatible ARCore Android phone, open the HTTPS app in Chrome, scroll to **Use the sensors you already own**, and tap **Start depth preview**. Grant the AR camera permission. The overlay reports center distance, depth map resolution, and whether the browser granted raw, smooth, or unreported depth. Point at a matte surface and move slowly. Compare a few readings with a physical distance at different ranges; the preview is for capability and repeatability checks only. If the button says depth is unavailable, send the phone model, browser, and OS version with the result. On iPhone, this browser path cannot activate LiDAR; a native ARKit capture app is the next integration.
 
 ## Repair something
 
@@ -47,6 +51,7 @@ For the printed-marker route:
 - Browser camera capture or image upload, with all processing on the device.
 - Optional local repair reasoning with [Ollama](https://ollama.com/). The model receives a measurement ledger and your description; a photo is included only if you opt in and the selected local model supports vision. Model advice is separate from CAD and cannot change the dimensions.
 - Optional phone accelerometer and orientation readout for steadier capture.
+- An opt-in WebXR depth preview on compatible ARCore Android phones in Chrome. It requests CPU-readable depth, preferring the raw depth type when available, only after you tap **Start depth preview**. It shows the browser-granted mode and a live center distance. Depth data stays on the device and never sets CAD scale.
 - Flat, rounded mounting plates with multiple holes, plus STL and editable OpenSCAD export.
 - A three-size printable screw clearance coupon, also available as STL and editable OpenSCAD.
 - A two-hole scan–print–rescan loop that requires a physical print measurement, cross-checks it against the photo, rejects mismatched or unstable scans, and generates a measured second CAD revision. It can export a local JSON receipt and shareable PNG proof card.
@@ -64,7 +69,7 @@ The reference and measured holes must be coplanar. Lens distortion, a bent refer
 
 Install [Ollama](https://ollama.com/) separately and start a model on the same device. Click **Connect Ollama on this device**, choose a model, describe the repair, and click **Analyze this repair** after measurements are cross-checked. The app uses Ollama's [chat API](https://docs.ollama.com/api/chat) with structured JSON output. A [vision-capable model](https://docs.ollama.com/capabilities/vision) can also receive the photo when you explicitly select that option. The app connects only to `127.0.0.1:11434`; it has no cloud fallback. AI output is unverified advice, never measurement authority.
 
-Phone motion and orientation can help capture a steadier photo, but cannot establish absolute millimetre scale. On supported devices, native [ARKit scene depth](https://developer.apple.com/documentation/arkit/arframe/scenedepth) or [ARCore Raw Depth](https://developers.google.com/ar/develop/java/depth/raw-depth) could offer metric depth and per-pixel confidence. These APIs need device-specific testing against real repair measurements before they can unlock CAD export; GhostPart does not yet use depth as a scale source. [WebXR depth](https://developer.mozilla.org/en-US/docs/Web/API/XRSession/depthUsage) has limited browser availability.
+Phone motion and orientation can help capture a steadier photo, but cannot establish absolute millimetre scale. [Chrome on supported Android devices can expose ARCore depth through WebXR](https://developers.google.com/ar/develop/webxr/arcore-comparison); GhostPart now offers an experimental live preview through that API. Newer [WebXR depth APIs can request a raw or smooth depth type](https://immersive-web.github.io/depth-sensing/), and the app reports what the browser grants. This is **not** the native [ARCore Raw Depth confidence image](https://developers.google.com/ar/develop/java/depth/raw-depth). [WebXR depth has limited browser availability](https://developer.mozilla.org/en-US/docs/Web/API/XRFrame/getDepthInformation). Accessing the native ARCore confidence image and [iPhone LiDAR scene depth](https://developer.apple.com/documentation/arkit/arframe/scenedepth) requires Android and iOS integrations. No depth path sets repair dimensions until device-specific comparisons against physical measurements pass.
 
 ## Why this exists
 

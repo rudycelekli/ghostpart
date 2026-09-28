@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PartPreview } from "./components/PartPreview";
 import { FitWorkbench } from "./components/FitWorkbench";
+import { DepthPreview } from "./components/DepthPreview";
 import { PreflightLab } from "./components/PreflightLab";
 import {
   downloadFile,
@@ -681,7 +682,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.5.0
+          <span /> OPEN SOURCE / V0.6.0
         </span>
       </header>
 
@@ -1636,19 +1637,7 @@ export default function App() {
                 </p>
               )}
             </div>
-            <div className="sensor-block sensor-future">
-              <div className="sensor-icon">
-                <ScanLine size={24} />
-              </div>
-              <span className="sensor-number">03 / DEPTH, WHEN AVAILABLE</span>
-              <h3>Next: scan the mating surface.</h3>
-              <p>
-                Native phone depth sensors could improve 3D fit. Browser access
-                varies, so depth is on the roadmap rather than claimed as part
-                of this release.
-              </p>
-              <span className="future-label">RESEARCH TRACK / NOT IN V0.5</span>
-            </div>
+            <DepthPreview onBegin={stopCamera} />
           </div>
         </section>
         <section className="closing">
