@@ -315,6 +315,7 @@ footer a:hover {
 .workbench-section,
 .preflight-section,
 .fit-section,
+.design-section,
 .ai-section,
 .sensor-section {
   padding: 98px clamp(22px, 5.8vw, 96px);
@@ -1550,6 +1551,165 @@ footer a:hover {
   margin: 8px 0;
   line-height: 1.4;
 }
+.design-section {
+  background: #f1ede4;
+}
+.design-workspace {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  border: 1px solid #d1c9bd;
+  background: #faf8f3;
+}
+.design-inputs,
+.design-output {
+  padding: clamp(23px, 3vw, 46px);
+  min-width: 0;
+}
+.design-inputs {
+  border-right: 1px solid #d1c9bd;
+}
+.design-inputs > label {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  margin-bottom: 18px;
+  max-width: 420px;
+}
+.design-inputs textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 13px;
+  border: 1px solid #c8c6bc;
+  background: #fffefa;
+  color: #27302a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.design-inputs textarea:focus,
+.design-fields input:focus,
+.design-ai-row select:focus {
+  outline: 2px solid #d85836;
+  outline-offset: 1px;
+}
+.design-actions,
+.design-ai-row,
+.design-exports,
+.design-kind {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.design-actions button,
+.design-ai-row button,
+.design-exports button,
+.design-kind button {
+  min-height: 39px;
+  padding: 8px 12px;
+  border: 1px solid #39423b;
+  background: transparent;
+  color: #29312d;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.design-actions button:first-child,
+.design-exports button:first-child {
+  background: #29322d;
+  color: #fff8ef;
+}
+.design-ai-row {
+  margin-top: 24px;
+}
+.design-ai-row select {
+  min-height: 39px;
+  padding: 0 10px;
+  background: #fffefa;
+  border: 1px solid #39423b;
+  max-width: 100%;
+}
+.design-hint {
+  font-size: 11px;
+  color: #68736a;
+  line-height: 1.55;
+  margin-top: 15px;
+}
+.design-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 10px;
+}
+.design-status span {
+  color: #c54d30;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+}
+.design-status strong {
+  color: #68736a;
+}
+.concept-preview,
+.design-placeholder {
+  width: 100%;
+  height: 300px;
+  background: #e9e5db;
+}
+.design-placeholder {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 30px;
+  color: #a13827;
+  font-size: 14px;
+}
+.design-kind button[aria-pressed="true"] {
+  background: #e75b38;
+  border-color: #e75b38;
+  color: white;
+}
+.design-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+.design-fields label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 45px;
+  padding: 6px 9px;
+  border: 1px solid #d4d0c6;
+  color: #657067;
+  font-size: 11px;
+  font-weight: 700;
+}
+.design-fields label > span:last-child {
+  white-space: nowrap;
+}
+.design-fields input {
+  width: 65px;
+  border: 0;
+  border-bottom: 1px solid #c9c3b7;
+  border-radius: 0;
+  text-align: right;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+  color: #29312d;
+}
+.design-exports {
+  margin-top: 18px;
+}
 .ai-section {
   background: #e8e6dc;
 }
@@ -2079,6 +2239,13 @@ footer > a {
   }
   .ai-workspace {
     grid-template-columns: 1fr;
+  }
+  .design-workspace {
+    grid-template-columns: 1fr;
+  }
+  .design-inputs {
+    border-right: 0;
+    border-bottom: 1px solid #d1c9bd;
   }
   .ai-empty {
     min-height: 310px;

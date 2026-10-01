@@ -21,6 +21,7 @@ import {
 import { PartPreview } from "./components/PartPreview";
 import { FitWorkbench } from "./components/FitWorkbench";
 import { DepthPreview } from "./components/DepthPreview";
+import { DesignStudio } from "./components/DesignStudio";
 import { PreflightLab } from "./components/PreflightLab";
 import {
   downloadFile,
@@ -671,6 +672,7 @@ export default function App() {
         <nav className="header-nav" aria-label="Main navigation">
           <a href="#workbench">Workbench</a>
           <a href="#fit-loop">Fit loop</a>
+          <a href="#describe-to-3d">Describe to 3D</a>
           <a href="#intelligence">Intelligence</a>
           <a href="#how">How it works</a>
           <a
@@ -682,7 +684,7 @@ export default function App() {
           </a>
         </nav>
         <span className="release-pill">
-          <span /> OPEN SOURCE / V0.6.0
+          <span /> OPEN SOURCE / V0.7.0
         </span>
       </header>
 
@@ -1376,6 +1378,8 @@ export default function App() {
           referenceMode={referenceMode}
           sample={isSample}
         />
+
+        <DesignStudio />
 
         <section className="ai-section" id="intelligence">
           <div className="section-heading">
